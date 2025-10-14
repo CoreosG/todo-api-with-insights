@@ -1,0 +1,29 @@
+---
+alwaysApply: true
+---
+- Validate inputs with pydantic on every API boundary.
+- Write/maintain tests for new endpoints and bug fixes (pytest).
+- Emit structured JSON logs (via logging library) for CloudWatch integration.
+
+# Data & ETL (Tie into ADR-001)
+- Prefer schema evolution-friendly formats (e.g., Parquet). Partition S3 data by date (year/month/day) unless justified otherwise.
+- Ensure idempotency for ETL writes; implement safe retries with exponential backoff.
+- Leverage DynamoDB Streams for CDC as selected in ADR-001 to enable real-time data lake feeds.
+- Keep ETL jobs lightweight and event-driven (e.g., via Lambda triggers) for cost optimization.
+
+# Observability
+- Emit structured logs (JSON) with request_id and user_id where available.
+- Expose minimal, meaningful metrics for API (e.g., latency, error rate) and ETL (e.g., job duration).
+- Integrate with CloudWatch for dashboards and alarms as per ADR-000.
+
+# Infra
+- Tag all AWS resources: Project, Owner, Environment, CostCenter.
+- Use least-privilege IAM policies; review before applying IaC.
+- Provide teardown instructions for all deployments to avoid cost drift.
+- Prefer serverless services (e.g., Lambda, S3) over containers for this workload, aligning with ADR-000's scalability and cost drivers.
+
+# Collaboration & Documentation
+- When using AI for ADR-related tasks (e.g., drafting or updating based on new decisions), generate a prompt file in `.cursor/prompts/` automatically, including placeholders for manual input like rationale and validation.
+- Propose ADR edits (e.g., adding a new section or refining rationale) based on AI-assisted research, but require manual review and commit approval to ensure alignment with project goals from ADR-000.
+- For key features/tasks (e.g., API or ETL implementation), auto-suggest prompt file creation with structured fields (e.g., prompt used, constraints, outcome); leave placeholders for [your rationale], [validation notes], and [commit links].
+- After AI-assisted work, suggest conventional commit messages (e.g., `docs(adr): update database selection rationale`) and ensure changes are small/incremental as per general rules.
