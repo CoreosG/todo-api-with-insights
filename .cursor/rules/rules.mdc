@@ -1,6 +1,15 @@
 ---
 alwaysApply: true
 ---
+# General
+- Prefer small, incremental changes (< ~200 LOC). If a change exceeds this, split into multiple commits/PRs.
+- Never commit secrets. Use env vars/SSM/Secrets Manager; verify .gitignore.
+- Prioritize readability over cleverness; add docstrings when logic isn't obvious.
+- Align with serverless-first architecture from ADR-000 for simplicity and cost efficiency.
+
+# Python
+- Use FastAPI for the API (as per ADR decisions); expose OpenAPI/Swagger for documentation and validation.
+- Enforce ruff+black+mypy clean before commit (`make lint` must pass).
 - Validate inputs with pydantic on every API boundary.
 - Write/maintain tests for new endpoints and bug fixes (pytest).
 - Emit structured JSON logs (via logging library) for CloudWatch integration.
