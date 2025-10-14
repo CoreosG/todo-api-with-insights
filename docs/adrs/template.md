@@ -2,8 +2,7 @@
 
 **Date:** YYYY-MM-DD  
 **Status:** Accepted  
-**Deciders:** [Your Name]  
-**Technical Story:** [Link to requirement or issue]
+
 
 ## Context and Problem Statement
 
