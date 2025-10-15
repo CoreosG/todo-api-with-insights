@@ -36,3 +36,4 @@ alwaysApply: true
 - Propose ADR edits (e.g., adding a new section or refining rationale) based on AI-assisted research, but require manual review and commit approval to ensure alignment with project goals from ADR-000.
 - For key features/tasks (e.g., API or ETL implementation), auto-suggest prompt file creation with structured fields (e.g., prompt used, constraints, outcome); leave placeholders for [your rationale], [validation notes], and [commit links].
 - After AI-assisted work, suggest conventional commit messages (e.g., `docs(adr): update database selection rationale`) and ensure changes are small/incremental as per general rules.
+- Update `docs/changelog.md` for every change (e.g., ADRs, diagrams, code); this is extremely required to maintain traceability and adhere to "Keep a Changelog" best practices from ADR-000.
