@@ -44,3 +44,6 @@ Compare the proposed logic to my current developed logic, for the most part i th
 Prompt:
 Generate prompt for the agent to update @004-api-framework.md to include the new decisions, use lambda layers to share code between lambdas, we'll use that for the  repository pattern abstraction, new logic for lambdas should be:
 Handler (Entrypoint) -> Controller -> Service -> Repository (lambda layer) -> DynamoDB
+
+Objective:
+Get a elaborate prompt to update [004-api-framework](/docs/adrs/004-api-framework-and-architecture.md) with the new architecture decisions.
