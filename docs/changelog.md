@@ -8,14 +8,16 @@
    ## [Unreleased]
 
    ### Added
-   - ADR-004: API Framework Selection (FastAPI for serverless integration).
+   - ADR-004: API Framework Selection (FastAPI for serverless integration with Repository pattern implementation).
    - ADR-005: ETL Method (Hybrid Lambda/Glue pipeline for data lake).
    - ADR-006: Monitoring and Observability (CloudWatch for API/ETL metrics and dashboard).
+   - ADR-007: IaC Tool Selection (AWS CDK for Python-native infrastructure automation).
 
    ### Changed
    - Updated System_architecture.md Mermaid diagram to include CloudWatch Metrics integration for ETL observability (added arrows from Glue Catalog and Athena to CloudWatch for better alignment with ADR-006).
    - Enhanced System_architecture.md with additional metrics links: Firehose, DynamoDB, Streams, Lambda Sync, and Lambda Async to CloudWatch Metrics for complete API and ETL observability.
    - Refined ADR prompts in `.cursor/prompts/` for better AI-assisted documentation.
+   - Enhanced ADR-004 with comprehensive Repository pattern implementation details, including 5-layer architecture (Entrypoint → Controller → Service → Repository → Database) and Lambda Layers for code sharing across Lambda functions.
 
    ### Fixed
    - None yet.
@@ -30,8 +32,9 @@
    - None yet.
 
    ## [1.0.0] - 2025-10-15
-   - Initial project setup with ADRs 000-006 completed.
+   - Initial project setup with ADRs 000-007 completed.
    - Architecture diagram established.
+   - Repository pattern implementation details added to ADR-004.
 
    ---
 

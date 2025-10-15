@@ -127,11 +127,75 @@ class TaskResponse(BaseModel):
     completed_at: Optional[datetime]
 ```
 
+## Implementation Architecture
+
+### Repository Pattern and Layered Architecture
+
+The API implementation follows a clean architecture pattern with clear separation of concerns across five layers: **Entrypoint → Controller → Service → Repository → Database**. This design decouples database operations from business logic, enables comprehensive testing, and supports code reusability across Lambda functions (Sync, Async, CDC) through Lambda Layers.
+
+#### Architecture Layers Overview
+
+**Layer 1: Entrypoint (Handler)**
+- **Purpose**: Receives HTTP requests/events and orchestrates the request lifecycle
+- **Responsibilities**: Input parsing, response formatting, error handling, logging
+- **Framework**: FastAPI route handlers with dependency injection
+
+**Layer 2: Controller**
+- **Purpose**: Coordinates business operations and validates business rules
+- **Responsibilities**: Authorization, input validation, orchestration of service calls
+- **Framework**: FastAPI controllers with Pydantic models for request/response validation
+
+**Layer 3: Service**
+- **Purpose**: Contains core business logic and complex operations
+- **Responsibilities**: Business rule enforcement, data transformation, cross-entity operations
+- **Framework**: Pure Python classes with dependency injection
+
+**Layer 4: Repository**
+- **Purpose**: Abstracts database operations and provides data access methods
+- **Responsibilities**: CRUD operations, query building, data mapping, connection management
+- **Framework**: Abstract base classes implemented for specific database types
+
+**Layer 5: Database**
+- **Purpose**: Physical data storage and retrieval
+- **Responsibilities**: Execute queries, manage connections, handle transactions
+- **Framework**: DynamoDB with boto3 async client
+
+#### Repository Pattern Implementation
+
+The Repository pattern abstracts database operations behind a consistent interface, enabling:
+- **Database Agnosticism**: Easy switching between database implementations
+- **Testability**: Mock repositories for unit testing without database dependencies
+- **Consistency**: Standardized error handling and data access patterns
+- **Performance**: Connection pooling and query optimization at the repository level
+
+
+#### Benefits of This Architecture
+
+**Decoupling Benefits:**
+- **Database Independence**: Repository interface allows easy database migration
+- **Testability**: Each layer can be unit tested in isolation with mocks
+- **Maintainability**: Changes to database schema only affect repository layer
+- **Reusability**: Services and repositories shared across Lambda functions
+
+**Lambda Layers Benefits:**
+- **Reduced Bundle Size**: Common code in layer, reducing individual Lambda package sizes
+- **Deployment Efficiency**: Update layer once, deploy to all functions automatically
+- **Version Management**: Layer versions enable rollback and compatibility management
+- **Cost Optimization**: Smaller Lambda packages reduce cold start times and memory usage
+
+**Integration with DynamoDB (ADR-001/ADR-003):**
+- Repository implements GSI queries for user-scoped access patterns
+- Single-table design handled transparently through repository methods
+- CDC integration through repository-level stream processing
+
 ## Links
 
 * [Related ADR-000: Architecture Overview](000-architecture-overview.md)
 * [Related ADR-001: Database Selection](001-database-selection.md)
 * [Related ADR-003: Data Modeling Approach](003-data-modeling-approach.md)
+* [Related ADR-007: IaC Tool Selection](007-iac-tool-selection.md)
 * [FastAPI Documentation](https://fastapi.tiangolo.com/)
 * [Pydantic Documentation](https://docs.pydantic.dev/)
 * [Mangum ASGI Adapter](https://mangum.readthedocs.io/)
+* [AWS Lambda Layers](https://docs.aws.amazon.com/lambda/latest/dg/configuration-layers.html)
+* [Repository Pattern](https://martinfowler.com/eaaCatalog/repository.html)
