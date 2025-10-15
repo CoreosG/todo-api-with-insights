@@ -5,6 +5,7 @@
            AG -->|GET/PUT/DEL| L1[Lambda Sync]
            L1 --> CW[CloudWatch Logs]
            CW --> FH[Firehose]
+           FH --> |Metrics|CWM
            FH --> S3B[S3 Bronze]
            L1 --> DDB[DynamoDB]
            AG -->|Metrics| CWM[CloudWatch Metrics]
