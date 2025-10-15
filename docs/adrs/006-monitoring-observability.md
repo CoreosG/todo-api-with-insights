@@ -226,7 +226,9 @@ CloudWatch provides seamless integration with all AWS services in the architectu
 ## Links
 
 * [Related ADR-000: Architecture Overview](000-architecture-overview.md)
-* [Related ADR-004: API Framework](004-api-framework.md)
+* [Related ADR-001: Database Selection](001-database-selection.md)
+* [Related ADR-002: Database Capacity Mode Selection](002-database-capacity-mode-selection.md)
+* [Related ADR-003: Data Modeling Approach](003-data-modeling-approach.md)
 * [Related ADR-005: ETL Method](005-etl-method.md)
 * [AWS CloudWatch Documentation](https://docs.aws.amazon.com/cloudwatch/)
 * [CloudWatch Dashboard Best Practices](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/CloudWatch_Dashboards.html)

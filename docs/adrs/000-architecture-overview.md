@@ -1,5 +1,8 @@
 # ADR-000: Architecture Overview and Design Philosophy
 
+**Date:** 2025-10-14
+**Status:** Accepted
+
 ## Context
 <details>
     <summary>Challenge context</summary>

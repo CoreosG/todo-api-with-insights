@@ -79,6 +79,6 @@ The system requires a persistent data store for user and task data to support a 
 
 ## Links
 
-* [Related ADR-000: Architecture Overview](/docs/adrs/000-architecture-overview.md)
-* [Related ADR-002: Database Capacity Mode Selection](/docs/adrs/002-database-capacity-mode-selection.md)
-* [Related ADR-003: Data Modeling Approach](/docs/adrs/003-data-modeling-approach.md)
+* [Related ADR-000: Architecture Overview](000-architecture-overview.md)
+* [Related ADR-002: Database Capacity Mode Selection](002-database-capacity-mode-selection.md)
+* [Related ADR-003: Data Modeling Approach](003-data-modeling-approach.md)

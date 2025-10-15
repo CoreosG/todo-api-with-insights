@@ -150,7 +150,7 @@ The hybrid approach optimally balances real-time processing requirements with co
 * [Related ADR-000: Architecture Overview](000-architecture-overview.md)
 * [Related ADR-001: Database Selection](001-database-selection.md)
 * [Related ADR-003: Data Modeling Approach](003-data-modeling-approach.md)
-* [Related ADR-004: API Framework](004-api-framework.md)
+* [Related ADR-002: Database Capacity Mode Selection](002-database-capacity-mode-selection.md)
 * [AWS Firehose Documentation](https://docs.aws.amazon.com/firehose/latest/dev/what-is-this-service.html)
 * [AWS Glue Documentation](https://docs.aws.amazon.com/glue/latest/dg/what-is-glue.html)
 * [AWS Athena Documentation](https://docs.aws.amazon.com/athena/latest/ug/what-is.html)

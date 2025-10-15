@@ -229,7 +229,7 @@ TTL: expiration_timestamp (Unix timestamp for automatic cleanup)
 
 * [Related ADR-000: Architecture Overview](000-architecture-overview.md)
 * [Related ADR-001: Database Selection](001-database-selection.md)
-* [Related ADR-002: API Framework](002-api-framework.md)
+* [Related ADR-002: Database Capacity Mode Selection](002-database-capacity-mode-selection.md)
 
 ## References
 
