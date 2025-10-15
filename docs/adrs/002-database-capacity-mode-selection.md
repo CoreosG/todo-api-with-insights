@@ -72,5 +72,6 @@ ADR-001 selected **DynamoDB** as the persistent data store. DynamoDB offers two 
 
 ## Links
 
-* [Related ADR-000: Architecture Overview]
-* [Related ADR-001: Database Selection]
+* [Related ADR-000: Architecture Overview](/docs/adrs/000-architecture-overview.md)
+* [Related ADR-001: Database Selection](/docs/adrs/001-database-selection.md)
+* [Related ADR-003: Database Modeling approach](/docs/adrs/003-data-modeling-approach.md)

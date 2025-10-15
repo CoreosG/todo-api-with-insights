@@ -57,3 +57,6 @@ Draft ADR-004: API Framework, focusing on selecting and justifying a Python fram
 ✅ Tests: TestClient and pytest-asyncio  
 [Validation Notes Here]: verify fastApi compatibility with lambda.  
 ```
+
+
+commit link:
