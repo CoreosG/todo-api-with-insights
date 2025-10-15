@@ -1,9 +1,6 @@
 ## Prompts
 
-
-### ADR-005 - ETL Method
-
-prompt: 
+First prompt: 
 added @004-api-framework.md successfully.
 now to ADR-005 ETL Method, review @System_architecture.md 
 we'll have s3 bronze, silver, gold.
@@ -16,6 +13,8 @@ generate a elaborate prompt to setup ADR-005.
 objective: 
 get a elaborate prompt, run and review results. this time i'm expecting to have a lot  of gaps to fill in.
 
+
+Provided setup prompt (from A.I) - with manual tweaks:
 ```
 ## Prompt for ADR-005: ETL Method
 

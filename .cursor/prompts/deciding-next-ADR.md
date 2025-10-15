@@ -1,12 +1,13 @@
 # Prompts:
 
-### ADR-004 - Api Framework
-prompt:
+First prompt:
     @docs/ - architecture overview done, database and data modeling done, use them as refference.
     Now i need to decide whether to make a ADR for api-framework or the stack as a whole. Since many things were decided on challenge context, such as linting, testing, authentication. Should i work on just the api-framework with the other frameworks as more refined detailed mentions, or do a detailed ADR for each step?
 
 Objective:
     Understand more what is  the best practice given my current context, since i feel it's  overkill to do a separate ADR for each item in the stack decision.
+
+Side effect: A.I suggested a list of next ADRs to do, i'll follow it because i agree with the recommended path.
 
 ## Subsequential prompts:
 prompt: Given we're doing just one api-framework ADR mentioning technology stack as a comprehensive section within the document, generate a prompt for the agent to work on setting up the initial ADR given all my previous context.
@@ -14,7 +15,7 @@ prompt: Given we're doing just one api-framework ADR mentioning technology stack
 objective:
 get a elaborate prompt, run and review results
 
-prompt:
+Provided setup prompt (from A.I) - with manual tweaks:
 ```
  Prompt for ADR-004: API Framework
 
