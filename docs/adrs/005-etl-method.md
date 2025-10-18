@@ -5,7 +5,7 @@
 
 ## Context and Problem Statement
 
-The system requires a lightweight ETL pipeline that extracts task-level data and writes insights to Amazon S3 for Athena queries, as specified in ADR-000. The pipeline must handle two data sources: CloudWatch logs (from API Gateway, Lambda Sync, Lambda Async) and DynamoDB Streams (processed by Lambda CDC). Both sources feed into Firehose for ingestion to S3 Bronze (raw, partitioned Parquet data), followed by Glue Catalog/Crawler for S3 Silver (transformed via Glue Jobs for aggregations), and Athena queries producing S3 Gold (optimized for analytics). The chosen method must ensure event-driven, cost-effective processing that integrates with the single-table data model from ADR-003 and API from ADR-004, while maintaining simplicity, idempotency, and serverless alignment per ADR-000.
+The system requires a lightweight ETL pipeline that extracts task-level data and writes insights to Amazon S3 for Athena queries, as specified in ADR-000. The pipeline must handle two data sources: CloudWatch logs (from API Gateway, Lambda) and DynamoDB Streams (processed by Lambda CDC). Both sources feed into Firehose for ingestion to S3 Bronze (raw, partitioned Parquet data), followed by Glue Catalog/Crawler for S3 Silver (transformed via Glue Jobs for aggregations), and Athena queries producing S3 Gold (optimized for analytics). The chosen method must ensure event-driven, cost-effective processing that integrates with the single-table data model from ADR-003 and API from ADR-004, while maintaining simplicity, idempotency, and serverless alignment per ADR-000.
 
 ## Decision Drivers
 
