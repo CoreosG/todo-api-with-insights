@@ -1,7 +1,7 @@
-from datetime import date, datetime, UTC
+from datetime import UTC, date, datetime
 
 import pytest
-from pydantic import ValidationError, ConfigDict
+from pydantic import ValidationError
 
 from src.models.task_models import (
     Priority,

@@ -1,8 +1,7 @@
 from datetime import date, datetime
 from enum import Enum
-from typing import Optional
 
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 # Enums for Task Status and Priority, directly derived from ADR-003 schema
@@ -70,11 +69,11 @@ class TaskResponse(TaskBase):
 
 # Optional: Model for updating a task (partial updates, excluding read-only fields)
 class TaskUpdate(BaseModel):
-    title: Optional[str] = Field(None, min_length=1, max_length=200)
-    description: Optional[str] = Field(None, max_length=1000)
-    status: Optional[TaskStatus] = None
-    priority: Optional[Priority] = None
-    category: Optional[str] = Field(None, max_length=50)
-    due_date: Optional[date] = None
+    title: str | None = Field(None, min_length=1, max_length=200)
+    description: str | None = Field(None, max_length=1000)
+    status: TaskStatus | None = None
+    priority: Priority | None = None
+    category: str | None = Field(None, max_length=50)
+    due_date: date | None = None
 
     model_config = ConfigDict(extra="forbid")
