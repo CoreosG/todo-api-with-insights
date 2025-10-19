@@ -32,6 +32,7 @@ class TaskBase(BaseModel):
         max_length=1000,
         description="Detailed task description (optional, up to 1000 characters)",
     )
+    status: TaskStatus = Field(TaskStatus.pending, description="Task status")
     priority: Priority = Field(Priority.medium, description="Task priority level")
     category: str | None = Field(
         None,
