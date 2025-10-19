@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 
 # Base model for shared User attributes, ensuring validation per ADR-004
@@ -45,6 +45,4 @@ class UserUpdate(BaseModel):
         None, min_length=1, max_length=100, description="Updated name (optional)"
     )
 
-    class Config:
-        # Allow partial updates by making fields optional
-        extra = "forbid"  # Prevent extra fields not defined in the model
+    model_config = ConfigDict(extra="forbid")
