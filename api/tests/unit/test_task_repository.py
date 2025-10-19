@@ -2,23 +2,14 @@ from datetime import date
 
 import pytest
 from botocore.exceptions import ClientError
-from moto import mock_aws
 
 from src.models.task_models import Priority, TaskCreate, TaskResponse, TaskStatus
-from src.repositories.task_repository import TaskRepository
-
-# Use centralized database fixtures
-from tests.fixtures.database import mock_repositories
-
-# Fixture for TaskRepository instance using centralized fixtures
-@pytest.fixture
-def task_repo(mock_repositories):
-    return mock_repositories["task_repo"]
 
 
 class TestTaskRepositoryCreate:
     @pytest.mark.asyncio
-    async def test_create_task_success(self, task_repo):
+    async def test_create_task_success(self, mock_repositories):
+        task_repo = mock_repositories["task_repo"]
         task_create = TaskCreate(
             title="Test Task",
             description="Description",
@@ -33,7 +24,8 @@ class TestTaskRepositoryCreate:
         assert response.status == TaskStatus.pending
 
     @pytest.mark.asyncio
-    async def test_create_task_boundary_values(self, task_repo):
+    async def test_create_task_boundary_values(self, mock_repositories):
+        task_repo = mock_repositories["task_repo"]
         long_title = "A" * 200
         task_create = TaskCreate(title=long_title, priority=Priority.low)
         response = await task_repo.create_task("user-456", task_create)
@@ -42,7 +34,8 @@ class TestTaskRepositoryCreate:
 
 class TestTaskRepositoryRead:
     @pytest.mark.asyncio
-    async def test_get_task_success(self, task_repo):
+    async def test_get_task_success(self, mock_repositories):
+        task_repo = mock_repositories["task_repo"]
         task_create = TaskCreate(title="Retrieve Test")
         created = await task_repo.create_task("user-123", task_create)
         response = await task_repo.get_task("user-123", created.id)
@@ -50,12 +43,14 @@ class TestTaskRepositoryRead:
         assert response.title == "Retrieve Test"
 
     @pytest.mark.asyncio
-    async def test_get_task_not_found(self, task_repo):
+    async def test_get_task_not_found(self, mock_repositories):
+        task_repo = mock_repositories["task_repo"]
         with pytest.raises(ValueError, match="not found"):
             await task_repo.get_task("user-123", "nonexistent")
 
     @pytest.mark.asyncio
-    async def test_get_tasks_success(self, task_repo):
+    async def test_get_tasks_success(self, mock_repositories):
+        task_repo = mock_repositories["task_repo"]
         task1 = TaskCreate(title="Task 1")
         task2 = TaskCreate(title="Task 2")
         await task_repo.create_task("user-123", task1)
@@ -66,7 +61,8 @@ class TestTaskRepositoryRead:
 
 class TestTaskRepositoryUpdate:
     @pytest.mark.asyncio
-    async def test_update_task_success(self, task_repo):
+    async def test_update_task_success(self, mock_repositories):
+        task_repo = mock_repositories["task_repo"]
         task_create = TaskCreate(title="Original")
         created = await task_repo.create_task("user-123", task_create)
         response = await task_repo.update_task(
@@ -75,14 +71,16 @@ class TestTaskRepositoryUpdate:
         assert response.title == "Updated"
 
     @pytest.mark.asyncio
-    async def test_update_task_not_found(self, task_repo):
+    async def test_update_task_not_found(self, mock_repositories):
+        task_repo = mock_repositories["task_repo"]
         with pytest.raises(ValueError, match="not found"):
             await task_repo.update_task("user-123", "nonexistent", {"title": "Fail"})
 
 
 class TestTaskRepositoryDelete:
     @pytest.mark.asyncio
-    async def test_delete_task_success(self, task_repo):
+    async def test_delete_task_success(self, mock_repositories):
+        task_repo = mock_repositories["task_repo"]
         task_create = TaskCreate(title="Delete Test")
         created = await task_repo.create_task("user-123", task_create)
         await task_repo.delete_task("user-123", created.id)
@@ -90,14 +88,16 @@ class TestTaskRepositoryDelete:
             await task_repo.get_task("user-123", created.id)
 
     @pytest.mark.asyncio
-    async def test_delete_task_not_found(self, task_repo):
+    async def test_delete_task_not_found(self, mock_repositories):
+        task_repo = mock_repositories["task_repo"]
         with pytest.raises(ClientError):
             await task_repo.delete_task("user-123", "nonexistent")
 
 
 class TestTaskRepositoryGSIQueries:
     @pytest.mark.asyncio
-    async def test_get_tasks_by_status(self, task_repo):
+    async def test_get_tasks_by_status(self, mock_repositories):
+        task_repo = mock_repositories["task_repo"]
         task1 = TaskCreate(title="Pending Task", status=TaskStatus.pending)
         task2 = TaskCreate(title="Completed Task", status=TaskStatus.completed)
         await task_repo.create_task("user-123", task1)
@@ -109,7 +109,8 @@ class TestTaskRepositoryGSIQueries:
         assert pending_tasks[0].status == TaskStatus.pending
 
     @pytest.mark.asyncio
-    async def test_get_tasks_by_due_date(self, task_repo):
+    async def test_get_tasks_by_due_date(self, mock_repositories):
+        task_repo = mock_repositories["task_repo"]
         due_date = date(2023, 10, 1)
         task = TaskCreate(title="Due Task", due_date=due_date)
         await task_repo.create_task("user-123", task)
@@ -117,7 +118,8 @@ class TestTaskRepositoryGSIQueries:
         assert len(tasks) == 1
 
     @pytest.mark.asyncio
-    async def test_get_tasks_by_priority(self, task_repo):
+    async def test_get_tasks_by_priority(self, mock_repositories):
+        task_repo = mock_repositories["task_repo"]
         task1 = TaskCreate(title="High Priority", priority=Priority.high)
         task2 = TaskCreate(title="Low Priority", priority=Priority.low)
         await task_repo.create_task("user-123", task1)
@@ -127,7 +129,8 @@ class TestTaskRepositoryGSIQueries:
         assert high_tasks[0].priority == Priority.high
 
     @pytest.mark.asyncio
-    async def test_get_tasks_by_category(self, task_repo):
+    async def test_get_tasks_by_category(self, mock_repositories):
+        task_repo = mock_repositories["task_repo"]
         task1 = TaskCreate(title="Work Task", category="work")
         task2 = TaskCreate(title="Personal Task", category="personal")
         await task_repo.create_task("user-123", task1)
@@ -139,7 +142,8 @@ class TestTaskRepositoryGSIQueries:
 
 class TestTaskRepositoryErrors:
     @pytest.mark.asyncio
-    async def test_dynamodb_client_error_simulation(self, task_repo, mocker):
+    async def test_dynamodb_client_error_simulation(self, mock_repositories, mocker):
+        task_repo = mock_repositories["task_repo"]
         mocker.patch.object(
             task_repo.table,
             "put_item",
@@ -152,7 +156,8 @@ class TestTaskRepositoryErrors:
             await task_repo.create_task("user-123", task_create)
 
     @pytest.mark.asyncio
-    async def test_invalid_user_id_scoping(self, task_repo):
+    async def test_invalid_user_id_scoping(self, mock_repositories):
+        task_repo = mock_repositories["task_repo"]
         task_create = TaskCreate(title="Scoped Task")
         created = await task_repo.create_task("user-123", task_create)
         with pytest.raises(ValueError, match="not found"):
@@ -161,7 +166,8 @@ class TestTaskRepositoryErrors:
 
 class TestTaskRepositoryModelIntegration:
     @pytest.mark.asyncio
-    async def test_full_crud_cycle(self, task_repo):
+    async def test_full_crud_cycle(self, mock_repositories):
+        task_repo = mock_repositories["task_repo"]
         task_create = TaskCreate(title="Cycle Task", priority=Priority.urgent)
         created = await task_repo.create_task("user-123", task_create)
         assert created.priority == Priority.urgent

@@ -2,25 +2,16 @@ from datetime import datetime, timezone
 
 import pytest
 from botocore.exceptions import ClientError
-from moto import mock_aws
 
 from src.models.idempotency_models import IdempotencyCreate, IdempotencyResponse
-from src.repositories.idempotency_repository import IdempotencyRepository
-
-# Use centralized database fixtures
-from tests.fixtures.database import mock_repositories
-
-# Fixture for IdempotencyRepository instance using centralized fixtures
-@pytest.fixture
-def idempotency_repo(mock_repositories):
-    return mock_repositories["idempotency_repo"]
 
 
 # Happy Path Tests for CRUD Operations (Create)
 class TestIdempotencyRepositoryCreate:
     @pytest.mark.asyncio
-    async def test_create_idempotency_success(self, idempotency_repo):
+    async def test_create_idempotency_success(self, mock_repositories):
         """Happy Path: Create an idempotency record and verify DynamoDB item + response."""
+        idempotency_repo = mock_repositories["idempotency_repo"]
         idempotency = IdempotencyCreate(
             request_id="req-123",
             response_data='{"status": "success"}',
@@ -35,8 +26,9 @@ class TestIdempotencyRepositoryCreate:
         assert response.http_status_code == 201
 
     @pytest.mark.asyncio
-    async def test_create_idempotency_boundary_values(self, idempotency_repo):
+    async def test_create_idempotency_boundary_values(self, mock_repositories):
         """Happy Path: Test boundary values (e.g., long request_id)."""
+        idempotency_repo = mock_repositories["idempotency_repo"]
         long_id = "A" * 255
         idempotency = IdempotencyCreate(
             request_id=long_id,
@@ -53,8 +45,9 @@ class TestIdempotencyRepositoryCreate:
 # Happy Path Tests for Read (Get)
 class TestIdempotencyRepositoryRead:
     @pytest.mark.asyncio
-    async def test_get_idempotency_success(self, idempotency_repo):
+    async def test_get_idempotency_success(self, mock_repositories):
         """Happy Path: Retrieve an idempotency record."""
+        idempotency_repo = mock_repositories["idempotency_repo"]
         idempotency = IdempotencyCreate(
             request_id="req-456",
             response_data='{"status": "created"}',
@@ -69,16 +62,18 @@ class TestIdempotencyRepositoryRead:
         assert response.response_data == '{"status": "created"}'
 
     @pytest.mark.asyncio
-    async def test_get_idempotency_not_found(self, idempotency_repo):
+    async def test_get_idempotency_not_found(self, mock_repositories):
         """Failure Mode: Record not found."""
+        idempotency_repo = mock_repositories["idempotency_repo"]
         response = await idempotency_repo.get_idempotency("nonexistent")
         assert response is None
 
 
 class TestIdempotencyRepositoryDelete:
     @pytest.mark.asyncio
-    async def test_delete_idempotency_success(self, idempotency_repo):
+    async def test_delete_idempotency_success(self, mock_repositories):
         """Happy Path: Delete an idempotency record."""
+        idempotency_repo = mock_repositories["idempotency_repo"]
         idempotency = IdempotencyCreate(
             request_id="req-789",
             response_data='{"status": "deleted"}',
@@ -93,8 +88,9 @@ class TestIdempotencyRepositoryDelete:
         assert response is None
 
     @pytest.mark.asyncio
-    async def test_delete_idempotency_not_found(self, idempotency_repo):
+    async def test_delete_idempotency_not_found(self, mock_repositories):
         """Success Mode: Delete non-existent record should not raise error (DynamoDB behavior)."""
+        idempotency_repo = mock_repositories["idempotency_repo"]
         await idempotency_repo.delete_idempotency(
             "nonexistent"
         )  # Should complete without error
@@ -103,8 +99,9 @@ class TestIdempotencyRepositoryDelete:
 # Error Handling and Edge Cases
 class TestIdempotencyRepositoryErrors:
     @pytest.mark.asyncio
-    async def test_dynamodb_client_error_simulation(self, idempotency_repo, mocker):
+    async def test_dynamodb_client_error_simulation(self, mock_repositories, mocker):
         """Failure Mode: Simulate DynamoDB errors (e.g., throttling)."""
+        idempotency_repo = mock_repositories["idempotency_repo"]
         mocker.patch.object(
             idempotency_repo.table,
             "put_item",
@@ -124,8 +121,9 @@ class TestIdempotencyRepositoryErrors:
             await idempotency_repo.create_idempotency(idempotency)
 
     @pytest.mark.asyncio
-    async def test_create_idempotency_propagates_client_error(self, idempotency_repo):
+    async def test_create_idempotency_propagates_client_error(self, mock_repositories):
         """Test: ClientError is properly propagated from create_idempotency."""
+        idempotency_repo = mock_repositories["idempotency_repo"]
         # Mock the table's put_item method to raise ClientError
         from unittest.mock import MagicMock
 
@@ -164,8 +162,9 @@ class TestIdempotencyRepositoryErrors:
 # Integration with Models
 class TestIdempotencyRepositoryModelIntegration:
     @pytest.mark.asyncio
-    async def test_full_crud_cycle(self, idempotency_repo):
+    async def test_full_crud_cycle(self, mock_repositories):
         """Happy Path: Full create-read-delete cycle with model validation."""
+        idempotency_repo = mock_repositories["idempotency_repo"]
         idempotency = IdempotencyCreate(
             request_id="req-cycle",
             response_data='{"status": "cycle"}',
@@ -186,8 +185,9 @@ class TestIdempotencyRepositoryModelIntegration:
         assert deleted is None
 
     @pytest.mark.asyncio
-    async def test_item_to_idempotency_response_helper(self, idempotency_repo):
+    async def test_item_to_idempotency_response_helper(self, mock_repositories):
         """Happy Path: Test helper method for item conversion."""
+        idempotency_repo = mock_repositories["idempotency_repo"]
         item = {
             "PK": "IDEMPOTENCY#req-helper",
             "SK": "METADATA",
