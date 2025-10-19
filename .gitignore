@@ -63,6 +63,7 @@ Thumbs.db   # Windows
 
 # Environment variables and secrets (as per ADR-000)
 .env
+.env.dev
 .env.local
 .env.development.local
 .env.test.local
