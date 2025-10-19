@@ -6,32 +6,13 @@ from src.models.user_models import UserCreate, UserResponse
 from src.repositories.user_repository import UserRepository
 
 
-# Fixture to set up a mocked DynamoDB table for each test
+# Use centralized database fixtures
+from tests.fixtures.database import mock_repositories
+
+# Fixture for UserRepository instance using centralized fixtures
 @pytest.fixture
-def dynamodb_table():
-    with mock_aws():
-        import boto3
-
-        dynamodb = boto3.resource("dynamodb", region_name="us-east-1")
-        table = dynamodb.create_table(
-            TableName="todo-app-data",
-            KeySchema=[
-                {"AttributeName": "PK", "KeyType": "HASH"},
-                {"AttributeName": "SK", "KeyType": "RANGE"},
-            ],
-            AttributeDefinitions=[
-                {"AttributeName": "PK", "AttributeType": "S"},
-                {"AttributeName": "SK", "AttributeType": "S"},
-            ],
-            BillingMode="PAY_PER_REQUEST",
-        )
-        yield table
-
-
-# Fixture for UserRepository instance
-@pytest.fixture
-def user_repo(dynamodb_table):
-    return UserRepository(table_name="todo-app-data", region="us-east-1")
+def user_repo(mock_repositories):
+    return mock_repositories["user_repo"]
 
 
 # Happy Path Tests for CRUD Operations

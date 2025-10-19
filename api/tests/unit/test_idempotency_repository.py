@@ -7,33 +7,13 @@ from moto import mock_aws
 from src.models.idempotency_models import IdempotencyCreate, IdempotencyResponse
 from src.repositories.idempotency_repository import IdempotencyRepository
 
+# Use centralized database fixtures
+from tests.fixtures.database import mock_repositories
 
-# Fixture to set up a mocked DynamoDB table for each test (exact copy from user tests)
+# Fixture for IdempotencyRepository instance using centralized fixtures
 @pytest.fixture
-def dynamodb_table():
-    with mock_aws():
-        import boto3
-
-        dynamodb = boto3.resource("dynamodb", region_name="us-east-1")
-        table = dynamodb.create_table(
-            TableName="todo-app-data",
-            KeySchema=[
-                {"AttributeName": "PK", "KeyType": "HASH"},
-                {"AttributeName": "SK", "KeyType": "RANGE"},
-            ],
-            AttributeDefinitions=[
-                {"AttributeName": "PK", "AttributeType": "S"},
-                {"AttributeName": "SK", "AttributeType": "S"},
-            ],
-            BillingMode="PAY_PER_REQUEST",
-        )
-        yield table
-
-
-# Fixture for IdempotencyRepository instance (exact copy from user tests)
-@pytest.fixture
-def idempotency_repo(dynamodb_table):
-    return IdempotencyRepository(table_name="todo-app-data", region="us-east-1")
+def idempotency_repo(mock_repositories):
+    return mock_repositories["idempotency_repo"]
 
 
 # Happy Path Tests for CRUD Operations (Create)

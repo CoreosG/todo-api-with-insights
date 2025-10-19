@@ -7,74 +7,13 @@ from moto import mock_aws
 from src.models.task_models import Priority, TaskCreate, TaskResponse, TaskStatus
 from src.repositories.task_repository import TaskRepository
 
+# Use centralized database fixtures
+from tests.fixtures.database import mock_repositories
 
+# Fixture for TaskRepository instance using centralized fixtures
 @pytest.fixture
-def dynamodb_table():
-    with mock_aws():
-        import boto3
-
-        dynamodb = boto3.resource("dynamodb", region_name="us-east-1")
-        table = dynamodb.create_table(
-            TableName="todo-app-data",
-            KeySchema=[
-                {"AttributeName": "PK", "KeyType": "HASH"},
-                {"AttributeName": "SK", "KeyType": "RANGE"},
-            ],
-            AttributeDefinitions=[
-                {"AttributeName": "PK", "AttributeType": "S"},
-                {"AttributeName": "SK", "AttributeType": "S"},
-                {"AttributeName": "GSI1PK", "AttributeType": "S"},
-                {"AttributeName": "GSI1SK", "AttributeType": "S"},
-                {"AttributeName": "GSI2PK", "AttributeType": "S"},
-                {"AttributeName": "GSI2SK", "AttributeType": "S"},
-                {"AttributeName": "GSI3PK", "AttributeType": "S"},
-                {"AttributeName": "GSI3SK", "AttributeType": "S"},
-                {"AttributeName": "GSI4PK", "AttributeType": "S"},
-                {"AttributeName": "GSI4SK", "AttributeType": "S"},
-            ],
-            BillingMode="PAY_PER_REQUEST",
-            GlobalSecondaryIndexes=[
-                {
-                    "IndexName": "GSI1",
-                    "KeySchema": [
-                        {"AttributeName": "GSI1PK", "KeyType": "HASH"},
-                        {"AttributeName": "GSI1SK", "KeyType": "RANGE"},
-                    ],
-                    "Projection": {"ProjectionType": "ALL"},
-                },
-                {
-                    "IndexName": "GSI2",
-                    "KeySchema": [
-                        {"AttributeName": "GSI2PK", "KeyType": "HASH"},
-                        {"AttributeName": "GSI2SK", "KeyType": "RANGE"},
-                    ],
-                    "Projection": {"ProjectionType": "ALL"},
-                },
-                {
-                    "IndexName": "GSI3",
-                    "KeySchema": [
-                        {"AttributeName": "GSI3PK", "KeyType": "HASH"},
-                        {"AttributeName": "GSI3SK", "KeyType": "RANGE"},
-                    ],
-                    "Projection": {"ProjectionType": "ALL"},
-                },
-                {
-                    "IndexName": "GSI4",
-                    "KeySchema": [
-                        {"AttributeName": "GSI4PK", "KeyType": "HASH"},
-                        {"AttributeName": "GSI4SK", "KeyType": "RANGE"},
-                    ],
-                    "Projection": {"ProjectionType": "ALL"},
-                },
-            ],
-        )
-        table.wait_until_exists()
-        yield table
-
-
-@pytest.fixture
-def task_repo(dynamodb_table):
-    return TaskRepository(table_name="todo-app-data", region="us-east-1")
+def task_repo(mock_repositories):
+    return mock_repositories["task_repo"]
 
 
 class TestTaskRepositoryCreate:
