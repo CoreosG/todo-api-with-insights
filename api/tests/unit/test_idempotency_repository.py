@@ -143,6 +143,43 @@ class TestIdempotencyRepositoryErrors:
         with pytest.raises(ClientError):
             await idempotency_repo.create_idempotency(idempotency)
 
+    @pytest.mark.asyncio
+    async def test_create_idempotency_propagates_client_error(self, idempotency_repo):
+        """Test: ClientError is properly propagated from create_idempotency."""
+        # Mock the table's put_item method to raise ClientError
+        from unittest.mock import MagicMock
+
+        mock_put_item = MagicMock(
+            side_effect=ClientError(
+                {
+                    "Error": {
+                        "Code": "ValidationException",
+                        "Message": "Invalid request",
+                    }
+                },
+                "PutItem",
+            )
+        )
+
+        with pytest.MonkeyPatch().context() as m:
+            m.setattr(idempotency_repo.table, "put_item", mock_put_item)
+
+            idempotency = IdempotencyCreate(
+                request_id="client-error-test",
+                response_data='{"test": "data"}',
+                target_task_pk="TASK#user-123",
+                target_task_sk="TASK#task-123",
+                http_status_code=200,
+                expiration_timestamp=int(datetime.now(timezone.utc).timestamp())
+                + 86400,
+            )
+
+            # Should re-raise the ClientError
+            with pytest.raises(ClientError) as exc_info:
+                await idempotency_repo.create_idempotency(idempotency)
+
+            assert exc_info.value.response["Error"]["Code"] == "ValidationException"
+
 
 # Integration with Models
 class TestIdempotencyRepositoryModelIntegration:
