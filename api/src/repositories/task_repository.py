@@ -11,8 +11,8 @@ logger = logging.getLogger(__name__)
 
 
 class TaskRepository:
-    def __init__(self, table_name: str = "todo-app-data", region: str = "us-east-1"):
-        self.dynamodb = boto3.resource("dynamodb", region_name=region)
+    def __init__(self, table_name: str = "todo-app-data", region: str = "us-east-1", endpoint_url: str = None):
+        self.dynamodb = boto3.resource("dynamodb", region_name=region, endpoint_url=endpoint_url)
         self.table = self.dynamodb.Table(table_name)
 
     async def create_task(self, user_id: str, task: TaskCreate) -> TaskResponse:
