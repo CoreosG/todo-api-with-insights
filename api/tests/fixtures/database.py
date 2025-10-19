@@ -7,11 +7,10 @@ This module provides comprehensive database mocking and setup for both:
 """
 
 import os
-from typing import Dict, Any
+
+import boto3
 import pytest
 from moto import mock_aws
-import boto3
-from botocore.exceptions import ClientError
 
 # Environment-based configuration
 USE_LOCAL_DYNAMODB = os.getenv("USE_LOCAL_DYNAMODB", "false").lower() == "true"
@@ -136,9 +135,9 @@ def create_repository(
     table_name: str = "todo-app-data", endpoint_url: str = None, table=None
 ):
     """Create repository instances with environment-based configuration."""
-    from src.repositories.user_repository import UserRepository
-    from src.repositories.task_repository import TaskRepository
     from src.repositories.idempotency_repository import IdempotencyRepository
+    from src.repositories.task_repository import TaskRepository
+    from src.repositories.user_repository import UserRepository
 
     region = "us-east-1"
 
@@ -236,7 +235,7 @@ def create_test_task(
     status: str = "pending",
 ):
     """Helper to create test task data."""
-    from src.models.task_models import TaskCreate, Priority, TaskStatus
+    from src.models.task_models import Priority, TaskCreate, TaskStatus
 
     return TaskCreate(
         title=title, priority=Priority(priority), status=TaskStatus(status)
