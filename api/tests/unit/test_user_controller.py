@@ -64,7 +64,7 @@ class TestUserControllerCreate:
         )
         mock_user_service.create_user = mocker.AsyncMock(return_value=mock_response)
 
-        response = client.post("/api/v1/users", json=user_data)
+        response = client.post("/api/v1/users", json=user_data, headers={"Idempotency-Key": "test-create-user-123"})
 
         assert response.status_code == 201
         assert response.json()["email"] == "test@example.com"
@@ -82,7 +82,7 @@ class TestUserControllerRead:
         )
         mock_user_service.get_user = mocker.AsyncMock(return_value=mock_response)
 
-        response = client.get("/api/v1/users/user-123")
+        response = client.get("/api/v1/users")
 
         assert response.status_code == 200
         assert response.json()["id"] == "user-123"
@@ -109,7 +109,7 @@ class TestUserControllerUpdate:
         mock_user_service.update_user = mocker.AsyncMock(return_value=mock_response)
 
         updates = {"email": "updated@example.com", "name": "Updated User"}
-        response = client.put("/api/v1/users/user-123", json=updates)
+        response = client.put("/api/v1/users", json=updates, headers={"Idempotency-Key": "test-update-user-123"})
 
         assert response.status_code == 200
         assert response.json()["email"] == "updated@example.com"
@@ -121,7 +121,7 @@ class TestUserControllerUpdate:
         )
 
         updates = {"email": "invalid-email"}
-        response = client.put("/api/v1/users/user-123", json=updates)
+        response = client.put("/api/v1/users", json=updates, headers={"Idempotency-Key": "test-update-invalid-email"})
 
         assert response.status_code == 422
 
@@ -131,7 +131,7 @@ class TestUserControllerDelete:
         """Happy Path: Delete user."""
         mock_user_service.delete_user = mocker.AsyncMock()
 
-        response = client.delete("/api/v1/users/user-123")
+        response = client.delete("/api/v1/users", headers={"Idempotency-Key": "test-delete-user-123"})
 
         assert response.status_code == 204
 
@@ -142,7 +142,7 @@ class TestUserControllerErrors:
         """Failure Mode: Missing auth (user_id)."""
         # Don't mock get_user_id for this test - let it use the real implementation
         # which will fail because there's no user_id in the request context
-        response = client.get("/api/v1/users/user-123")
+        response = client.get("/api/v1/users")
 
         assert response.status_code == 401
 
@@ -162,12 +162,12 @@ class TestUserControllerModelIntegration:
         )
         mock_user_service.create_user = mocker.AsyncMock(return_value=created)
 
-        response = client.post("/api/v1/users", json=user_data)
+        response = client.post("/api/v1/users", json=user_data, headers={"Idempotency-Key": "test-crud-cycle-create"})
         assert response.status_code == 201
 
         # Read
         mock_user_service.get_user = mocker.AsyncMock(return_value=created)
-        response = client.get("/api/v1/users/user-cycle")
+        response = client.get("/api/v1/users")
         assert response.status_code == 200
 
         # Update
@@ -181,10 +181,10 @@ class TestUserControllerModelIntegration:
         mock_user_service.update_user = mocker.AsyncMock(return_value=updated)
 
         updates = {"email": "updated@example.com"}
-        response = client.put("/api/v1/users/user-cycle", json=updates)
+        response = client.put("/api/v1/users", json=updates, headers={"Idempotency-Key": "test-crud-cycle-update"})
         assert response.status_code == 200
 
         # Delete
         mock_user_service.delete_user = mocker.AsyncMock()
-        response = client.delete("/api/v1/users/user-cycle")
+        response = client.delete("/api/v1/users", headers={"Idempotency-Key": "test-crud-cycle-delete"})
         assert response.status_code == 204
