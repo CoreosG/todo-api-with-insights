@@ -183,21 +183,54 @@ class TaskRepository:
         """Update a task with partial data."""
         pk = f"TASK#{user_id}"
         sk = f"TASK#{task_id}"
-        update_expr = "SET " + ", ".join(f"{k} = :{k}" for k in updates)
-        expr_values = {f":{k}": v for k, v in updates.items()}
 
-        # Add updated_at timestamp to updates
-        updates["updated_at"] = int(datetime.now(timezone.utc).timestamp())
-        update_expr = "SET " + ", ".join(f"{k} = :{k}" for k in updates)
-        expr_values = {f":{k}": v for k, v in updates.items()}
+        # Merge updates with current values to preserve unchanged fields
+        merged_updates = {}
+        for key, value in updates.items():
+            if value is not None:  # Only update non-None values
+                merged_updates[key] = value
+
+        # Escape reserved keywords in DynamoDB expressions
+        reserved_keywords = {
+            "status",
+            "name",
+            "email",
+        }  # Add other reserved keywords as needed
+        expr_attr_names = {}
+        expr_attr_values = {}
+        update_expr_parts = []
+
+        for key, value in merged_updates.items():
+            if key in reserved_keywords:
+                # Use expression attribute name for reserved keywords
+                attr_name = f"#{key}"
+                expr_attr_names[attr_name] = key
+                expr_attr_values[f":{key}"] = value
+                update_expr_parts.append(f"{attr_name} = :{key}")
+            else:
+                expr_attr_values[f":{key}"] = value
+                update_expr_parts.append(f"{key} = :{key}")
+
+        # Add updated_at timestamp
+        current_time = int(datetime.now(timezone.utc).timestamp())
+        expr_attr_values[":updated_at"] = current_time
+        update_expr_parts.append("updated_at = :updated_at")
+
+        update_expr = "SET " + ", ".join(update_expr_parts)
 
         try:
-            self.table.update_item(
-                Key={"PK": pk, "SK": sk},
-                UpdateExpression=update_expr,
-                ExpressionAttributeValues=expr_values,
-                ConditionExpression="attribute_exists(PK)",  # Only update existing items
-            )
+            update_params = {
+                "Key": {"PK": pk, "SK": sk},
+                "UpdateExpression": update_expr,
+                "ExpressionAttributeValues": expr_attr_values,
+                "ConditionExpression": "attribute_exists(PK)",  # Only update existing items
+            }
+
+            # Add expression attribute names if any reserved keywords used
+            if expr_attr_names:
+                update_params["ExpressionAttributeNames"] = expr_attr_names
+
+            self.table.update_item(**update_params)
             # Fetch and return updated task
             return await self.get_task(user_id, task_id)
         except ClientError as e:
@@ -242,12 +275,13 @@ class TaskRepository:
                 return float(value)
             return float(value)
 
+        status_value = item.get("status", "pending")
         return TaskResponse(
             id=item["SK"].split("#")[1],  # Extract task_id from SK
             title=item["title"],
             description=item.get("description"),  # Use .get() for safety
             status=TaskStatus(
-                item.get("status", "pending")
+                status_value if status_value is not None else "pending"
             ),  # Default to 'pending' if missing
             priority=Priority(
                 item.get("priority", "medium")
