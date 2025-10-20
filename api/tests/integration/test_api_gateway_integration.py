@@ -106,7 +106,7 @@ class TestLambdaAPIGatewayIntegration:
         # Create authenticated event
         event = create_authenticated_api_gateway_event(
             method="GET",
-            path=f"/api/v1/users/{user_id}",
+            path="/api/v1/users",
             user_id=user_id,
             email=email,
             name=name,
@@ -372,7 +372,7 @@ class TestLambdaAPIGatewayIntegration:
     def test_missing_authentication(self):
         """Test that endpoints properly handle missing authentication."""
         event = create_unauthenticated_api_gateway_event(
-            method="GET", path="/api/v1/users/test-user"
+            method="GET", path="/api/v1/users"
         )
 
         response = handler(event, {})

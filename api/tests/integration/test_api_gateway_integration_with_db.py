@@ -186,7 +186,7 @@ class TestLambdaAPIGatewayIntegrationWithDB:
         # Create authenticated event
         event = create_authenticated_api_gateway_event(
             method="GET",
-            path=f"/api/v1/users/{user_id}",
+            path="/api/v1/users",
             user_id=user_id,
             email=email,
             name=name

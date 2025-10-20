@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Header, HTTPException, Request, status
+from fastapi import APIRouter, Header, HTTPException, Request, status
 from fastapi.responses import JSONResponse
 
 from ..dependecies import (
@@ -51,7 +51,7 @@ async def create_user(
         raise HTTPException(status_code=400, detail=str(e)) from e
 
 
-@router.get("/users/{user_id}", response_model=UserResponse)
+@router.get("/users", response_model=UserResponse)
 async def get_user(
     request: Request,
 ) -> UserResponse:
@@ -70,7 +70,7 @@ async def get_user(
     return user
 
 
-@router.put("/users/{user_id}", response_model=UserResponse)
+@router.put("/users", response_model=UserResponse)
 async def update_user(
     updates: UserUpdate,
     request: Request,
@@ -118,7 +118,7 @@ async def update_user(
         raise HTTPException(status_code=400, detail=str(e)) from e
 
 
-@router.delete("/users/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/users", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_user(
     request: Request,
     idempotency_key: str = Header(..., description="Unique identifier for request deduplication"),
