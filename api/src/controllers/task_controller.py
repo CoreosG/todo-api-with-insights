@@ -25,7 +25,9 @@ async def create_task(
         user_context.user_id, user_context.email, user_context.name
     )
 
-    request_id = await get_request_id(request, user_context.user_id)
+    from ..dependecies import get_idempotency_key
+    idempotency_key = await get_idempotency_key(request)
+    request_id = await get_request_id(request, user_context.user_id, idempotency_key)
     from ..utils.dependency_injection import get_task_service
 
     task_service = get_task_service()

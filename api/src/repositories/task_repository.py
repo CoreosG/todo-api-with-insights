@@ -53,7 +53,12 @@ class TaskRepository:
             logger.info(f"Task created: {task_id} for user {user_id}")
             return TaskResponse(
                 id=task_id,
-                **task.model_dump(),  # Removed explicit status to avoid duplication
+                title=task.title,
+                description=task.description,
+                status=task.status,
+                priority=task.priority,
+                category=task.category,
+                due_date=task.due_date,
                 created_at=datetime.now(timezone.utc),
                 updated_at=datetime.now(timezone.utc),
             )
@@ -201,6 +206,18 @@ class TaskRepository:
         update_expr_parts = []
 
         for key, value in merged_updates.items():
+            # Handle special types that need conversion for DynamoDB
+            if key == "due_date" and value is not None:
+                # Convert datetime.date to ISO format string for DynamoDB
+                if hasattr(value, 'isoformat'):
+                    value = value.isoformat()
+                elif isinstance(value, str):
+                    # If it's already a string, keep it as is
+                    pass
+                else:
+                    # Convert other types to string
+                    value = str(value)
+
             if key in reserved_keywords:
                 # Use expression attribute name for reserved keywords
                 attr_name = f"#{key}"
