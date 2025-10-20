@@ -19,7 +19,9 @@ class TaskRepository:
         endpoint_url: str | None = None,
     ):
         # Use environment variable if table_name not provided
-        self.table_name = table_name or os.getenv("DYNAMODB_TABLE_NAME", "todo-app-data")
+        self.table_name = table_name or os.getenv(
+            "DYNAMODB_TABLE_NAME", "todo-app-data"
+        )
         self.dynamodb = boto3.resource(
             "dynamodb", region_name=region, endpoint_url=endpoint_url
         )
@@ -63,6 +65,7 @@ class TaskRepository:
                 category=task.category,
                 due_date=task.due_date,
                 created_at=datetime.now(timezone.utc),
+                completed_at=None,
                 updated_at=datetime.now(timezone.utc),
             )
         except ClientError as e:
@@ -212,7 +215,7 @@ class TaskRepository:
             # Handle special types that need conversion for DynamoDB
             if key == "due_date" and value is not None:
                 # Convert datetime.date to ISO format string for DynamoDB
-                if hasattr(value, 'isoformat'):
+                if hasattr(value, "isoformat"):
                     value = value.isoformat()
                 elif isinstance(value, str):
                     # If it's already a string, keep it as is

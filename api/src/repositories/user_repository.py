@@ -18,7 +18,9 @@ class UserRepository:
         endpoint_url: str | None = None,
     ):
         # Use environment variable if table_name not provided
-        self.table_name = table_name or os.getenv("DYNAMODB_TABLE_NAME", "todo-app-data")
+        self.table_name = table_name or os.getenv(
+            "DYNAMODB_TABLE_NAME", "todo-app-data"
+        )
         self.dynamodb = boto3.resource(
             "dynamodb", region_name=region, endpoint_url=endpoint_url
         )

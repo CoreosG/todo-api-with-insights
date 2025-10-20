@@ -353,8 +353,11 @@ class TestLambdaAPIGatewayIntegration:
         mock_task_service.task_repo.delete_task = AsyncMock()
 
         event = create_task_delete_event(
-            user_id=user_id, email=email, name=name, task_id=task_id,
-            idempotency_key="test-delete-idempotency-key-123"
+            user_id=user_id,
+            email=email,
+            name=name,
+            task_id=task_id,
+            idempotency_key="test-delete-idempotency-key-123",
         )
 
         # Patch the dependency injection functions
@@ -366,7 +369,7 @@ class TestLambdaAPIGatewayIntegration:
             response = handler(event, {})
 
         assert response["statusCode"] == 204
-        assert response["body"] == "{}"
+        assert response["body"] == ""
 
     def test_missing_authentication(self):
         """Test that endpoints properly handle missing authentication."""

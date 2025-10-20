@@ -20,24 +20,21 @@ def _get_dynamodb_endpoint_url() -> str | None:
 def create_user_repo() -> UserRepository:
     table_name = os.getenv("DYNAMODB_TABLE_NAME", "todo-app-data")
     return UserRepository(
-        table_name=table_name,
-        endpoint_url=_get_dynamodb_endpoint_url()
+        table_name=table_name, endpoint_url=_get_dynamodb_endpoint_url()
     )
 
 
 def create_task_repo() -> TaskRepository:
     table_name = os.getenv("DYNAMODB_TABLE_NAME", "todo-app-data")
     return TaskRepository(
-        table_name=table_name,
-        endpoint_url=_get_dynamodb_endpoint_url()
+        table_name=table_name, endpoint_url=_get_dynamodb_endpoint_url()
     )
 
 
 def create_idempotency_repo() -> IdempotencyRepository:
     table_name = os.getenv("DYNAMODB_TABLE_NAME", "todo-app-data")
     return IdempotencyRepository(
-        table_name=table_name,
-        endpoint_url=_get_dynamodb_endpoint_url()
+        table_name=table_name, endpoint_url=_get_dynamodb_endpoint_url()
     )
 
 

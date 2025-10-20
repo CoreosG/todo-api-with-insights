@@ -64,7 +64,11 @@ class TestUserControllerCreate:
         )
         mock_user_service.create_user = mocker.AsyncMock(return_value=mock_response)
 
-        response = client.post("/api/v1/users", json=user_data, headers={"Idempotency-Key": "test-create-user-123"})
+        response = client.post(
+            "/api/v1/users",
+            json=user_data,
+            headers={"Idempotency-Key": "test-create-user-123"},
+        )
 
         assert response.status_code == 201
         assert response.json()["email"] == "test@example.com"
@@ -109,7 +113,11 @@ class TestUserControllerUpdate:
         mock_user_service.update_user = mocker.AsyncMock(return_value=mock_response)
 
         updates = {"email": "updated@example.com", "name": "Updated User"}
-        response = client.put("/api/v1/users", json=updates, headers={"Idempotency-Key": "test-update-user-123"})
+        response = client.put(
+            "/api/v1/users",
+            json=updates,
+            headers={"Idempotency-Key": "test-update-user-123"},
+        )
 
         assert response.status_code == 200
         assert response.json()["email"] == "updated@example.com"
@@ -121,7 +129,11 @@ class TestUserControllerUpdate:
         )
 
         updates = {"email": "invalid-email"}
-        response = client.put("/api/v1/users", json=updates, headers={"Idempotency-Key": "test-update-invalid-email"})
+        response = client.put(
+            "/api/v1/users",
+            json=updates,
+            headers={"Idempotency-Key": "test-update-invalid-email"},
+        )
 
         assert response.status_code == 422
 
@@ -131,7 +143,9 @@ class TestUserControllerDelete:
         """Happy Path: Delete user."""
         mock_user_service.delete_user = mocker.AsyncMock()
 
-        response = client.delete("/api/v1/users", headers={"Idempotency-Key": "test-delete-user-123"})
+        response = client.delete(
+            "/api/v1/users", headers={"Idempotency-Key": "test-delete-user-123"}
+        )
 
         assert response.status_code == 204
 
@@ -162,7 +176,11 @@ class TestUserControllerModelIntegration:
         )
         mock_user_service.create_user = mocker.AsyncMock(return_value=created)
 
-        response = client.post("/api/v1/users", json=user_data, headers={"Idempotency-Key": "test-crud-cycle-create"})
+        response = client.post(
+            "/api/v1/users",
+            json=user_data,
+            headers={"Idempotency-Key": "test-crud-cycle-create"},
+        )
         assert response.status_code == 201
 
         # Read
@@ -181,10 +199,16 @@ class TestUserControllerModelIntegration:
         mock_user_service.update_user = mocker.AsyncMock(return_value=updated)
 
         updates = {"email": "updated@example.com"}
-        response = client.put("/api/v1/users", json=updates, headers={"Idempotency-Key": "test-crud-cycle-update"})
+        response = client.put(
+            "/api/v1/users",
+            json=updates,
+            headers={"Idempotency-Key": "test-crud-cycle-update"},
+        )
         assert response.status_code == 200
 
         # Delete
         mock_user_service.delete_user = mocker.AsyncMock()
-        response = client.delete("/api/v1/users", headers={"Idempotency-Key": "test-crud-cycle-delete"})
+        response = client.delete(
+            "/api/v1/users", headers={"Idempotency-Key": "test-crud-cycle-delete"}
+        )
         assert response.status_code == 204

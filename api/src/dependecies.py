@@ -4,7 +4,10 @@ import uuid
 
 from fastapi import HTTPException, Request
 
+from .models.idempotency_models import IdempotencyResponse
+
 logger = logging.getLogger(__name__)
+
 
 # Idempotency-Key header dependency for FastAPI
 def get_idempotency_key_from_header(request: Request) -> str:
@@ -12,8 +15,7 @@ def get_idempotency_key_from_header(request: Request) -> str:
     idempotency_key = request.headers.get("Idempotency-Key")
     if not idempotency_key:
         raise HTTPException(
-            status_code=400,
-            detail="Idempotency-Key header is required"
+            status_code=400, detail="Idempotency-Key header is required"
         )
     return idempotency_key
 
@@ -55,9 +57,7 @@ async def get_user_context(request: Request) -> UserContext:
     # Add LOCAL_USER environment variable to test locally, needs to be true for local testing
     if os.getenv("LOCAL_USER") == "true":
         return UserContext(
-            user_id="1234567890",
-            email="test@example.com",
-            name="Test User"
+            user_id="1234567890", email="test@example.com", name="Test User"
         )
 
     # Try to get event from Mangum's scope first (primary method for Lambda)
@@ -110,9 +110,10 @@ async def get_user_id(request: Request) -> str:
 
 # Idempotency-Key header is now handled by FastAPI Header dependency in main.py
 
-#------------------------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------------------------
 # Idempotency check function - now using actual IdempotencyService
-async def check_idempotency(request_id: str) -> dict | None:
+async def check_idempotency(request_id: str) -> IdempotencyResponse | None:
     """Check for duplicate requests and return cached response if found."""
     from .utils.dependency_injection import get_idempotency_service
 
@@ -132,6 +133,7 @@ def store_idempotency(
     # Use asyncio.create_task to avoid blocking the response
     # In test environments, just call the method directly since there's no event loop
     import asyncio
+
     try:
         asyncio.create_task(
             idempotency_service.store_response_async(

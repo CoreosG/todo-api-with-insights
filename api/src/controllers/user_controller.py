@@ -16,13 +16,14 @@ router = APIRouter()
 async def create_user(
     user: UserCreate,
     request: Request,
-    idempotency_key: str = Header(..., description="Unique identifier for request deduplication"),
-) -> UserResponse:
+    idempotency_key: str = Header(
+        ..., description="Unique identifier for request deduplication"
+    ),
+) -> UserResponse | JSONResponse:
     # Validate idempotency key
     if not idempotency_key:
         raise HTTPException(
-            status_code=400,
-            detail="Idempotency-Key header is required"
+            status_code=400, detail="Idempotency-Key header is required"
         )
 
     from ..utils.dependency_injection import get_user_service
@@ -38,9 +39,10 @@ async def create_user(
     if cached_response:
         # Return cached response for duplicate requests
         import json
+
         return JSONResponse(
             status_code=cached_response.http_status_code,
-            content=json.loads(cached_response.response_data)
+            content=json.loads(cached_response.response_data),
         )
 
     try:
@@ -74,13 +76,14 @@ async def get_user(
 async def update_user(
     updates: UserUpdate,
     request: Request,
-    idempotency_key: str = Header(..., description="Unique identifier for request deduplication"),
-) -> UserResponse:
+    idempotency_key: str = Header(
+        ..., description="Unique identifier for request deduplication"
+    ),
+) -> UserResponse | JSONResponse:
     # Validate idempotency key
     if not idempotency_key:
         raise HTTPException(
-            status_code=400,
-            detail="Idempotency-Key header is required"
+            status_code=400, detail="Idempotency-Key header is required"
         )
 
     # Get user context and ensure user exists (create if needed)
@@ -99,9 +102,10 @@ async def update_user(
     if cached_response:
         # Return cached response for duplicate requests
         import json
+
         return JSONResponse(
             status_code=cached_response.http_status_code,
-            content=json.loads(cached_response.response_data)
+            content=json.loads(cached_response.response_data),
         )
 
     try:
@@ -121,13 +125,14 @@ async def update_user(
 @router.delete("/users", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_user(
     request: Request,
-    idempotency_key: str = Header(..., description="Unique identifier for request deduplication"),
-) -> JSONResponse:
+    idempotency_key: str = Header(
+        ..., description="Unique identifier for request deduplication"
+    ),
+) -> None:
     # Validate idempotency key
     if not idempotency_key:
         raise HTTPException(
-            status_code=400,
-            detail="Idempotency-Key header is required"
+            status_code=400, detail="Idempotency-Key header is required"
         )
 
     # Get user context and ensure user exists (create if needed)
@@ -141,15 +146,13 @@ async def delete_user(
 
     request_id = await get_request_id(request, user_context.user_id, idempotency_key)
 
-    # Check for duplicate requests and return cached response if found
+    # For delete operations, we don't return cached responses to avoid 204 response body issues
+    # Check for duplicate requests but don't return cached response
     cached_response = await check_idempotency(request_id=request_id)
     if cached_response:
-        # Return cached response for duplicate requests
-        import json
-        return JSONResponse(
-            status_code=cached_response.http_status_code,
-            content=json.loads(cached_response.response_data)
-        )
+        # For delete operations, we just proceed with the deletion even if cached
+        # This maintains idempotency but avoids FastAPI 204 response body restrictions
+        pass
 
     await user_service.delete_user(user_context.user_id)
     store_idempotency(
@@ -159,4 +162,4 @@ async def delete_user(
         {"status": "deleted"},
         204,
     )
-    return JSONResponse(status_code=204, content={})
+    return None

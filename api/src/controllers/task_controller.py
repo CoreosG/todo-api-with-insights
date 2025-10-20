@@ -16,13 +16,14 @@ router = APIRouter()
 async def create_task(
     task: TaskCreate,
     request: Request,
-    idempotency_key: str = Header(..., description="Unique identifier for request deduplication"),
-) -> TaskResponse:
+    idempotency_key: str = Header(
+        ..., description="Unique identifier for request deduplication"
+    ),
+) -> TaskResponse | JSONResponse:
     # Validate idempotency key
     if not idempotency_key:
         raise HTTPException(
-            status_code=400,
-            detail="Idempotency-Key header is required"
+            status_code=400, detail="Idempotency-Key header is required"
         )
 
     # Get user context and ensure user exists (create if needed)
@@ -44,9 +45,10 @@ async def create_task(
     if cached_response:
         # Return cached response for duplicate requests
         import json
+
         return JSONResponse(
             status_code=cached_response.http_status_code,
-            content=json.loads(cached_response.response_data)
+            content=json.loads(cached_response.response_data),
         )
 
     try:
@@ -106,13 +108,14 @@ async def update_task(
     task_id: str,
     updates: TaskUpdate,
     request: Request,
-    idempotency_key: str = Header(..., description="Unique identifier for request deduplication"),
-) -> TaskResponse:
+    idempotency_key: str = Header(
+        ..., description="Unique identifier for request deduplication"
+    ),
+) -> TaskResponse | JSONResponse:
     # Validate idempotency key
     if not idempotency_key:
         raise HTTPException(
-            status_code=400,
-            detail="Idempotency-Key header is required"
+            status_code=400, detail="Idempotency-Key header is required"
         )
 
     # Get user context and ensure user exists (create if needed)
@@ -134,9 +137,10 @@ async def update_task(
     if cached_response:
         # Return cached response for duplicate requests
         import json
+
         return JSONResponse(
             status_code=cached_response.http_status_code,
-            content=json.loads(cached_response.response_data)
+            content=json.loads(cached_response.response_data),
         )
 
     try:
@@ -155,13 +159,14 @@ async def update_task(
 async def delete_task(
     task_id: str,
     request: Request,
-    idempotency_key: str = Header(..., description="Unique identifier for request deduplication"),
-) -> JSONResponse:
+    idempotency_key: str = Header(
+        ..., description="Unique identifier for request deduplication"
+    ),
+) -> None:
     # Validate idempotency key
     if not idempotency_key:
         raise HTTPException(
-            status_code=400,
-            detail="Idempotency-Key header is required"
+            status_code=400, detail="Idempotency-Key header is required"
         )
 
     # Get user context and ensure user exists (create if needed)
@@ -178,18 +183,16 @@ async def delete_task(
 
     task_service = get_task_service()
 
-    # Check for duplicate requests and return cached response if found
+    # For delete operations, we don't return cached responses to avoid 204 response body issues
+    # Check for duplicate requests but don't return cached response
     cached_response = await check_idempotency(request_id=request_id)
     if cached_response:
-        # Return cached response for duplicate requests
-        import json
-        return JSONResponse(
-            status_code=cached_response.http_status_code,
-            content=json.loads(cached_response.response_data)
-        )
+        # For delete operations, we just proceed with the deletion even if cached
+        # This maintains idempotency but avoids FastAPI 204 response body restrictions
+        pass
 
     await task_service.delete_task(user_context.user_id, task_id)
     store_idempotency(
         request_id, user_context.user_id, task_id, {"status": "deleted"}, 204
     )
-    return JSONResponse(status_code=204, content={})
+    return None

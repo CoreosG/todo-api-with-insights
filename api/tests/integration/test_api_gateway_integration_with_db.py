@@ -58,7 +58,7 @@ def dynamodb_setup():
             endpoint_url=endpoint_url,
             region_name="us-east-1",
             aws_access_key_id="dummy",  # Required for local DynamoDB
-            aws_secret_access_key="dummy"  # Required for local DynamoDB
+            aws_secret_access_key="dummy",  # Required for local DynamoDB
         )
 
         # Test connection by listing tables
@@ -82,27 +82,24 @@ def dynamodb_setup():
                 BillingMode="PAY_PER_REQUEST",
             )
             # Wait for table to be created
-            app_table.meta.client.get_waiter('table_exists').wait(
-                TableName=table_name,
-                WaiterConfig={'delay': 1, 'max_attempts': 10}
+            app_table.meta.client.get_waiter("table_exists").wait(
+                TableName=table_name, WaiterConfig={"delay": 1, "max_attempts": 10}
             )
         else:
             # Table already exists, get it
             app_table = dynamodb.Table(table_name)
 
-        yield {
-            "app_table": app_table,
-            "dynamodb": dynamodb,
-            "table_name": table_name
-        }
+        yield {"app_table": app_table, "dynamodb": dynamodb, "table_name": table_name}
 
         # Cleanup: Optionally delete test data if needed
         # Note: For session-scoped fixtures, cleanup happens at the end
         # You might want to implement cleanup logic here if needed
 
     except ClientError as e:
-        if e.response['Error']['Code'] == 'ResourceNotFoundException':
-            pytest.skip("Local DynamoDB instance not available. Please start DynamoDB with: docker run -p 8000:8000 amazon/dynamodb-local")
+        if e.response["Error"]["Code"] == "ResourceNotFoundException":
+            pytest.skip(
+                "Local DynamoDB instance not available. Please start DynamoDB with: docker run -p 8000:8000 amazon/dynamodb-local"
+            )
         else:
             raise
 
@@ -122,11 +119,17 @@ def run_with_local_dynamodb():
 
     # Run the tests
     import subprocess
-    result = subprocess.run([
-        "python", "-m", "pytest",
-        "tests/integration/test_api_gateway_integration_with_db.py",
-        "-v"
-    ], cwd=os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
+
+    result = subprocess.run(
+        [
+            "python",
+            "-m",
+            "pytest",
+            "tests/integration/test_api_gateway_integration_with_db.py",
+            "-v",
+        ],
+        cwd=os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
+    )
 
     return result.returncode
 
@@ -138,11 +141,7 @@ def test_user_data():
     email = f"test{user_id}@example.com"
     name = f"Test User {user_id}"
 
-    return {
-        "user_id": user_id,
-        "email": email,
-        "name": name
-    }
+    return {"user_id": user_id, "email": email, "name": name}
 
 
 @pytest.fixture
@@ -157,7 +156,7 @@ def test_task_data(test_user_data):
         "description": "Test Description",
         "priority": "medium",
         "category": "test",
-        "status": "pending"
+        "status": "pending",
     }
 
 
@@ -184,11 +183,7 @@ class TestLambdaAPIGatewayIntegrationWithDB:
 
         # Create authenticated event
         event = create_authenticated_api_gateway_event(
-            method="GET",
-            path="/api/v1/users",
-            user_id=user_id,
-            email=email,
-            name=name
+            method="GET", path="/api/v1/users", user_id=user_id, email=email, name=name
         )
 
         # Test user context extraction with real DB operations
@@ -197,9 +192,15 @@ class TestLambdaAPIGatewayIntegrationWithDB:
 
         # User context extraction should work, but DB operation might fail
         # This tests the JWT extraction part of the flow
-        assert response["statusCode"] in [200, 404, 500]  # Could be any of these depending on DB state
+        assert response["statusCode"] in [
+            200,
+            404,
+            500,
+        ]  # Could be any of these depending on DB state
 
-    def test_task_creation_through_lambda_with_db(self, dynamodb_setup, test_user_data, test_task_data):
+    def test_task_creation_through_lambda_with_db(
+        self, dynamodb_setup, test_user_data, test_task_data
+    ):
         """Test task creation through complete Lambda execution flow with real DB."""
         user_id = test_user_data["user_id"]
         email = test_user_data["email"]
@@ -211,14 +212,18 @@ class TestLambdaAPIGatewayIntegrationWithDB:
             name=name,
             title=test_task_data["title"],
             description=test_task_data["description"],
-            idempotency_key="test-create-idempotency-key-123"
+            idempotency_key="test-create-idempotency-key-123",
         )
 
         response = handler(event, {})
 
         # The response should be successful (201) if the database operations work
         # Note: Currently returns 500 if user doesn't exist (expected behavior for now)
-        assert response["statusCode"] in [200, 201, 500]  # Could be 500 if user doesn't exist
+        assert response["statusCode"] in [
+            200,
+            201,
+            500,
+        ]  # Could be 500 if user doesn't exist
 
         if response["statusCode"] == 201:
             body = json.loads(response["body"])
@@ -226,7 +231,9 @@ class TestLambdaAPIGatewayIntegrationWithDB:
             assert "id" in body  # Task was created with an ID
             # Note: user_id is not included in the response model
 
-    def test_task_retrieval_through_lambda_with_db(self, dynamodb_setup, test_user_data, test_task_data):
+    def test_task_retrieval_through_lambda_with_db(
+        self, dynamodb_setup, test_user_data, test_task_data
+    ):
         """Test task retrieval through complete Lambda execution flow with real DB."""
         user_id = test_user_data["user_id"]
         email = test_user_data["email"]
@@ -247,7 +254,9 @@ class TestLambdaAPIGatewayIntegrationWithDB:
             for task in body:
                 assert task["user_id"] == user_id
 
-    def test_task_update_through_lambda_with_db(self, dynamodb_setup, test_user_data, test_task_data):
+    def test_task_update_through_lambda_with_db(
+        self, dynamodb_setup, test_user_data, test_task_data
+    ):
         """Test task update through complete Lambda execution flow with real DB."""
         user_id = test_user_data["user_id"]
         email = test_user_data["email"]
@@ -263,7 +272,7 @@ class TestLambdaAPIGatewayIntegrationWithDB:
             description="Updated Description",
             priority="high",
             status="in_progress",
-            idempotency_key="test-update-idempotency-key-123"
+            idempotency_key="test-update-idempotency-key-123",
         )
 
         response = handler(event, {})
@@ -271,7 +280,9 @@ class TestLambdaAPIGatewayIntegrationWithDB:
         # Update might fail if task/user doesn't exist (current behavior)
         assert response["statusCode"] in [200, 404, 400, 500]
 
-    def test_task_deletion_through_lambda_with_db(self, dynamodb_setup, test_user_data, test_task_data):
+    def test_task_deletion_through_lambda_with_db(
+        self, dynamodb_setup, test_user_data, test_task_data
+    ):
         """Test task deletion through complete Lambda execution flow with real DB."""
         user_id = test_user_data["user_id"]
         email = test_user_data["email"]
@@ -282,7 +293,7 @@ class TestLambdaAPIGatewayIntegrationWithDB:
             email=email,
             name=name,
             task_id=test_task_data["task_id"],
-            idempotency_key="test-delete-idempotency-key-123"
+            idempotency_key="test-delete-idempotency-key-123",
         )
 
         response = handler(event, {})
@@ -294,8 +305,7 @@ class TestLambdaAPIGatewayIntegrationWithDB:
     def test_missing_authentication_with_db(self, dynamodb_setup):
         """Test that endpoints properly handle missing authentication with real DB."""
         event = create_unauthenticated_api_gateway_event(
-            method="GET",
-            path="/api/v1/users"
+            method="GET", path="/api/v1/users"
         )
 
         response = handler(event, {})
@@ -317,10 +327,12 @@ class TestLambdaAPIGatewayIntegrationWithDB:
             user_id=user_id,
             email=email,
             name=name,
-            body=json.dumps({
-                "title": "Invalid Task",
-                "priority": "invalid_priority_value"  # Should be enum value
-            })
+            body=json.dumps(
+                {
+                    "title": "Invalid Task",
+                    "priority": "invalid_priority_value",  # Should be enum value
+                }
+            ),
         )
 
         response = handler(event, {})
@@ -338,10 +350,7 @@ class TestLambdaAPIGatewayIntegrationWithDB:
         idempotency_key = "test-idempotency-key-123"
 
         event = create_task_create_event(
-            user_id=user_id,
-            email=email,
-            name=name,
-            idempotency_key=idempotency_key
+            user_id=user_id, email=email, name=name, idempotency_key=idempotency_key
         )
 
         response = handler(event, {})
@@ -368,10 +377,7 @@ class TestLambdaAPIGatewayIntegrationWithDB:
 
         # User 1 tries to retrieve their task
         event1 = create_task_get_event(
-            user_id=user1_id,
-            email=user1_email,
-            name=user1_name,
-            task_id=task_id
+            user_id=user1_id, email=user1_email, name=user1_name, task_id=task_id
         )
 
         response1 = handler(event1, {})
@@ -380,10 +386,7 @@ class TestLambdaAPIGatewayIntegrationWithDB:
 
         # User 2 tries to retrieve user 1's task (should also get 404, not access to user 1's data)
         event2 = create_task_get_event(
-            user_id=user2_id,
-            email=user2_email,
-            name=user2_name,
-            task_id=task_id
+            user_id=user2_id, email=user2_email, name=user2_name, task_id=task_id
         )
 
         response2 = handler(event2, {})

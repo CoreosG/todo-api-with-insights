@@ -69,7 +69,11 @@ class TestTaskControllerCreate:
         )
         mock_task_service.create_task = mocker.AsyncMock(return_value=mock_response)
 
-        response = client.post("/api/v1/tasks", json=task_data, headers={"Idempotency-Key": "test-create-task-123"})
+        response = client.post(
+            "/api/v1/tasks",
+            json=task_data,
+            headers={"Idempotency-Key": "test-create-task-123"},
+        )
 
         assert response.status_code == 201
         assert response.json()["id"] == "task-123"
@@ -88,7 +92,11 @@ class TestTaskControllerCreate:
         )
         mock_task_service.create_task = mocker.AsyncMock(return_value=mock_response)
 
-        response = client.post("/api/v1/tasks", json=task_data, headers={"Idempotency-Key": "test-create-task-boundary"})
+        response = client.post(
+            "/api/v1/tasks",
+            json=task_data,
+            headers={"Idempotency-Key": "test-create-task-boundary"},
+        )
 
         assert response.status_code == 201
         assert response.json()["title"] == long_title
@@ -158,7 +166,11 @@ class TestTaskControllerUpdate:
         mock_task_service.update_task = mocker.AsyncMock(return_value=updated_response)
 
         updates = {"status": "in_progress"}
-        response = client.put("/api/v1/tasks/task-123", json=updates, headers={"Idempotency-Key": "test-update-task-123"})
+        response = client.put(
+            "/api/v1/tasks/task-123",
+            json=updates,
+            headers={"Idempotency-Key": "test-update-task-123"},
+        )
 
         assert response.status_code == 200
         assert response.json()["status"] == "in_progress"
@@ -170,7 +182,11 @@ class TestTaskControllerUpdate:
         )
 
         updates = {"status": "pending"}
-        response = client.put("/api/v1/tasks/task-123", json=updates, headers={"Idempotency-Key": "test-update-invalid-status"})
+        response = client.put(
+            "/api/v1/tasks/task-123",
+            json=updates,
+            headers={"Idempotency-Key": "test-update-invalid-status"},
+        )
 
         assert response.status_code == 400
 
@@ -180,7 +196,10 @@ class TestTaskControllerDelete:
         """Happy Path: Delete task."""
         mock_task_service.delete_task = mocker.AsyncMock()
 
-        response = client.delete("/api/v1/tasks/task-123", headers={"Idempotency-Key": "test-delete-task-123"})
+        response = client.delete(
+            "/api/v1/tasks/task-123",
+            headers={"Idempotency-Key": "test-delete-task-123"},
+        )
 
         assert response.status_code == 204
 
@@ -212,7 +231,11 @@ class TestTaskControllerModelIntegration:
         )
         mock_task_service.create_task = mocker.AsyncMock(return_value=created)
 
-        response = client.post("/api/v1/tasks", json=task_data, headers={"Idempotency-Key": "test-crud-cycle-create"})
+        response = client.post(
+            "/api/v1/tasks",
+            json=task_data,
+            headers={"Idempotency-Key": "test-crud-cycle-create"},
+        )
         assert response.status_code == 201
 
         # Read
@@ -231,10 +254,17 @@ class TestTaskControllerModelIntegration:
         mock_task_service.update_task = mocker.AsyncMock(return_value=updated)
 
         updates = {"status": "in_progress"}
-        response = client.put("/api/v1/tasks/task-cycle", json=updates, headers={"Idempotency-Key": "test-crud-cycle-update"})
+        response = client.put(
+            "/api/v1/tasks/task-cycle",
+            json=updates,
+            headers={"Idempotency-Key": "test-crud-cycle-update"},
+        )
         assert response.status_code == 200
 
         # Delete
         mock_task_service.delete_task = mocker.AsyncMock()
-        response = client.delete("/api/v1/tasks/task-cycle", headers={"Idempotency-Key": "test-crud-cycle-delete"})
+        response = client.delete(
+            "/api/v1/tasks/task-cycle",
+            headers={"Idempotency-Key": "test-crud-cycle-delete"},
+        )
         assert response.status_code == 204
