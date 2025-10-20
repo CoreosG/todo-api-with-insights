@@ -1,5 +1,6 @@
 import logging
 import uuid
+import os
 
 from fastapi import HTTPException, Request
 
@@ -39,6 +40,14 @@ async def get_user_context(request: Request) -> UserContext:
     # For FastAPI in Lambda, extract from request context (via Mangum or direct event)
     # In production, use event["requestContext"]["authorizer"]["jwt"]["claims"] for HTTP API v2.0
     event = None
+
+    # Add LOCAL_USER environment variable to test locally, needs to be true for local testing
+    if os.getenv("LOCAL_USER") == "true":
+        return UserContext(
+            user_id="1234567890",
+            email="test@example.com",
+            name="Test User"
+        )
 
     # Try to get event from Mangum's scope first (primary method for Lambda)
     if hasattr(request, "scope") and request.scope.get("aws.event"):
