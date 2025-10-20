@@ -18,7 +18,7 @@ DYNAMODB_ENDPOINT = os.getenv("DYNAMODB_ENDPOINT", "http://localhost:8000")
 
 
 def create_dynamodb_table(table_name: str = "todo-app-data") -> boto3.resource:
-    """Create DynamoDB table with the schema defined in ADR-003."""
+    """Create or get existing DynamoDB table with the schema defined in ADR-003."""
 
     if USE_LOCAL_DYNAMODB:
         # Use local DynamoDB endpoint
@@ -28,6 +28,17 @@ def create_dynamodb_table(table_name: str = "todo-app-data") -> boto3.resource:
     else:
         # Use AWS DynamoDB (moto mock for testing)
         dynamodb = boto3.resource("dynamodb", region_name="us-east-1")
+
+    try:
+        # Try to get existing table first
+        table = dynamodb.Table(table_name)
+        # Check if table exists by trying to describe it
+        table.table_status
+        print(f"Using existing table: {table_name}")
+        return table
+    except Exception:
+        # Table doesn't exist, create it
+        print(f"Creating new table: {table_name}")
 
     # Create table with comprehensive schema from ADR-003
     table = dynamodb.create_table(
