@@ -201,7 +201,7 @@ class TestGetUserContext:
             await get_user_context(mock_request)
 
         assert exc_info.value.status_code == 401
-        assert "Missing user_id" in exc_info.value.detail
+        assert "No API Gateway event found" in exc_info.value.detail
 
 
 class TestGetUserId:
