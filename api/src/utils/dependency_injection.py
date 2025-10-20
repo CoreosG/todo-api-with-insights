@@ -1,4 +1,5 @@
 import os
+
 from ..repositories.idempotency_repository import IdempotencyRepository
 from ..repositories.task_repository import TaskRepository
 from ..repositories.user_repository import UserRepository
@@ -17,15 +18,27 @@ def _get_dynamodb_endpoint_url() -> str | None:
 
 # Repository factory functions (create new instances for each request)
 def create_user_repo() -> UserRepository:
-    return UserRepository(endpoint_url=_get_dynamodb_endpoint_url())
+    table_name = os.getenv("DYNAMODB_TABLE_NAME", "todo-app-data")
+    return UserRepository(
+        table_name=table_name,
+        endpoint_url=_get_dynamodb_endpoint_url()
+    )
 
 
 def create_task_repo() -> TaskRepository:
-    return TaskRepository(endpoint_url=_get_dynamodb_endpoint_url())
+    table_name = os.getenv("DYNAMODB_TABLE_NAME", "todo-app-data")
+    return TaskRepository(
+        table_name=table_name,
+        endpoint_url=_get_dynamodb_endpoint_url()
+    )
 
 
 def create_idempotency_repo() -> IdempotencyRepository:
-    return IdempotencyRepository(endpoint_url=_get_dynamodb_endpoint_url())
+    table_name = os.getenv("DYNAMODB_TABLE_NAME", "todo-app-data")
+    return IdempotencyRepository(
+        table_name=table_name,
+        endpoint_url=_get_dynamodb_endpoint_url()
+    )
 
 
 # Service factory functions with dependency injection

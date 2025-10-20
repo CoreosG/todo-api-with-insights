@@ -1,4 +1,5 @@
 import logging
+import os
 from datetime import datetime, timezone
 
 import boto3
@@ -12,14 +13,16 @@ logger = logging.getLogger(__name__)
 class IdempotencyRepository:
     def __init__(
         self,
-        table_name: str = "todo-app-data",
+        table_name: str | None = None,
         region: str = "us-east-1",
         endpoint_url: str | None = None,
     ):
+        # Use environment variable if table_name not provided
+        self.table_name = table_name or os.getenv("DYNAMODB_TABLE_NAME", "todo-app-data")
         self.dynamodb = boto3.resource(
             "dynamodb", region_name=region, endpoint_url=endpoint_url
         )
-        self.table = self.dynamodb.Table(table_name)
+        self.table = self.dynamodb.Table(self.table_name)
 
     async def create_idempotency(
         self, idempotency: IdempotencyCreate

@@ -1,8 +1,8 @@
 import logging
-import uuid
 import os
+import uuid
 
-from fastapi import Header, HTTPException, Request
+from fastapi import HTTPException, Request
 
 logger = logging.getLogger(__name__)
 
@@ -101,7 +101,7 @@ async def get_user_context(request: Request) -> UserContext:
     )
 
 
-# Extract user_id from request context (for API Gateway integration) 
+# Extract user_id from request context (for API Gateway integration)
 async def get_user_id(request: Request) -> str:
     """Extract user_id from API Gateway event context (Cognito authorizer)."""
     user_context = await get_user_context(request)
