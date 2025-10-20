@@ -5,18 +5,17 @@ Tests the complete Lambda execution flow using Mangum handler with real API Gate
 and actual DynamoDB operations using a local DynamoDB instance for realistic testing.
 """
 
-import asyncio
 import json
 import os
 import uuid
-from datetime import datetime, timezone
 
-import pytest
 import boto3
+import pytest
 from botocore.exceptions import ClientError
 from mangum import Mangum
 
 from src.main import app
+
 from ..helpers.api_gateway_events import (
     create_authenticated_api_gateway_event,
     create_health_check_event,
@@ -205,14 +204,14 @@ class TestLambdaAPIGatewayIntegrationWithDB:
         user_id = test_user_data["user_id"]
         email = test_user_data["email"]
         name = test_user_data["name"]
-        task_id = test_task_data["task_id"]
 
         event = create_task_create_event(
             user_id=user_id,
             email=email,
             name=name,
             title=test_task_data["title"],
-            description=test_task_data["description"]
+            description=test_task_data["description"],
+            idempotency_key="test-create-idempotency-key-123"
         )
 
         response = handler(event, {})
@@ -232,7 +231,6 @@ class TestLambdaAPIGatewayIntegrationWithDB:
         user_id = test_user_data["user_id"]
         email = test_user_data["email"]
         name = test_user_data["name"]
-        task_id = test_task_data["task_id"]
 
         event = create_task_get_event(user_id=user_id, email=email, name=name)
 
@@ -264,7 +262,8 @@ class TestLambdaAPIGatewayIntegrationWithDB:
             title="Updated Task",
             description="Updated Description",
             priority="high",
-            status="in_progress"
+            status="in_progress",
+            idempotency_key="test-update-idempotency-key-123"
         )
 
         response = handler(event, {})
@@ -277,13 +276,13 @@ class TestLambdaAPIGatewayIntegrationWithDB:
         user_id = test_user_data["user_id"]
         email = test_user_data["email"]
         name = test_user_data["name"]
-        task_id = test_task_data["task_id"]
 
         event = create_task_delete_event(
             user_id=user_id,
             email=email,
             name=name,
-            task_id=task_id
+            task_id=test_task_data["task_id"],
+            idempotency_key="test-delete-idempotency-key-123"
         )
 
         response = handler(event, {})
@@ -296,7 +295,7 @@ class TestLambdaAPIGatewayIntegrationWithDB:
         """Test that endpoints properly handle missing authentication with real DB."""
         event = create_unauthenticated_api_gateway_event(
             method="GET",
-            path="/api/v1/users/test-user"
+            path="/api/v1/users"
         )
 
         response = handler(event, {})
