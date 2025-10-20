@@ -1,4 +1,5 @@
 import logging
+import os
 from datetime import datetime, timezone
 from decimal import Decimal
 
@@ -13,14 +14,18 @@ logger = logging.getLogger(__name__)
 class TaskRepository:
     def __init__(
         self,
-        table_name: str = "todo-app-data",
+        table_name: str | None = None,
         region: str = "us-east-1",
         endpoint_url: str | None = None,
     ):
+        # Use environment variable if table_name not provided
+        self.table_name = table_name or os.getenv(
+            "DYNAMODB_TABLE_NAME", "todo-app-data"
+        )
         self.dynamodb = boto3.resource(
             "dynamodb", region_name=region, endpoint_url=endpoint_url
         )
-        self.table = self.dynamodb.Table(table_name)
+        self.table = self.dynamodb.Table(self.table_name)
 
     async def create_task(self, user_id: str, task: TaskCreate) -> TaskResponse:
         """Create a new task in DynamoDB per ADR-003 schema."""
@@ -60,6 +65,7 @@ class TaskRepository:
                 category=task.category,
                 due_date=task.due_date,
                 created_at=datetime.now(timezone.utc),
+                completed_at=None,
                 updated_at=datetime.now(timezone.utc),
             )
         except ClientError as e:
@@ -209,7 +215,7 @@ class TaskRepository:
             # Handle special types that need conversion for DynamoDB
             if key == "due_date" and value is not None:
                 # Convert datetime.date to ISO format string for DynamoDB
-                if hasattr(value, 'isoformat'):
+                if hasattr(value, "isoformat"):
                     value = value.isoformat()
                 elif isinstance(value, str):
                     # If it's already a string, keep it as is

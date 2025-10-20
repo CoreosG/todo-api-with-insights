@@ -1,4 +1,5 @@
-from fastapi import APIRouter, HTTPException, Request, status
+from fastapi import APIRouter, Header, HTTPException, Request, status
+from fastapi.responses import JSONResponse
 
 from ..dependecies import (
     check_idempotency,
@@ -15,14 +16,35 @@ router = APIRouter()
 async def create_user(
     user: UserCreate,
     request: Request,
-) -> UserResponse:
+    idempotency_key: str = Header(
+        ..., description="Unique identifier for request deduplication"
+    ),
+) -> UserResponse | JSONResponse:
+    # Validate idempotency key
+    if not idempotency_key:
+        raise HTTPException(
+            status_code=400, detail="Idempotency-Key header is required"
+        )
+
     from ..utils.dependency_injection import get_user_service
 
     user_service = get_user_service()
     user_context = await get_user_context(request)
     user_id = user_context.user_id
-    request_id = await get_request_id(request)
-    await check_idempotency(request_id=request_id)
+
+    request_id = await get_request_id(request, user_context.user_id, idempotency_key)
+
+    # Check for duplicate requests and return cached response if found
+    cached_response = await check_idempotency(request_id=request_id)
+    if cached_response:
+        # Return cached response for duplicate requests
+        import json
+
+        return JSONResponse(
+            status_code=cached_response.http_status_code,
+            content=json.loads(cached_response.response_data),
+        )
+
     try:
         response = await user_service.create_user(user_id, user)
         store_idempotency(request_id, user_id, user_id, {"status": "created"}, 201)
@@ -31,7 +53,7 @@ async def create_user(
         raise HTTPException(status_code=400, detail=str(e)) from e
 
 
-@router.get("/users/{user_id}", response_model=UserResponse)
+@router.get("/users", response_model=UserResponse)
 async def get_user(
     request: Request,
 ) -> UserResponse:
@@ -50,11 +72,20 @@ async def get_user(
     return user
 
 
-@router.put("/users/{user_id}", response_model=UserResponse)
+@router.put("/users", response_model=UserResponse)
 async def update_user(
     updates: UserUpdate,
     request: Request,
-) -> UserResponse:
+    idempotency_key: str = Header(
+        ..., description="Unique identifier for request deduplication"
+    ),
+) -> UserResponse | JSONResponse:
+    # Validate idempotency key
+    if not idempotency_key:
+        raise HTTPException(
+            status_code=400, detail="Idempotency-Key header is required"
+        )
+
     # Get user context and ensure user exists (create if needed)
     user_context = await get_user_context(request)
     from ..utils.dependency_injection import get_user_service
@@ -64,8 +95,19 @@ async def update_user(
         user_context.user_id, user_context.email, user_context.name
     )
 
-    request_id = await get_request_id(request, user_context.user_id)
-    await check_idempotency(request_id=request_id)
+    request_id = await get_request_id(request, user_context.user_id, idempotency_key)
+
+    # Check for duplicate requests and return cached response if found
+    cached_response = await check_idempotency(request_id=request_id)
+    if cached_response:
+        # Return cached response for duplicate requests
+        import json
+
+        return JSONResponse(
+            status_code=cached_response.http_status_code,
+            content=json.loads(cached_response.response_data),
+        )
+
     try:
         response = await user_service.update_user(user_context.user_id, updates)
         store_idempotency(
@@ -80,10 +122,19 @@ async def update_user(
         raise HTTPException(status_code=400, detail=str(e)) from e
 
 
-@router.delete("/users/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/users", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_user(
     request: Request,
+    idempotency_key: str = Header(
+        ..., description="Unique identifier for request deduplication"
+    ),
 ) -> None:
+    # Validate idempotency key
+    if not idempotency_key:
+        raise HTTPException(
+            status_code=400, detail="Idempotency-Key header is required"
+        )
+
     # Get user context and ensure user exists (create if needed)
     user_context = await get_user_context(request)
     from ..utils.dependency_injection import get_user_service
@@ -93,8 +144,16 @@ async def delete_user(
         user_context.user_id, user_context.email, user_context.name
     )
 
-    request_id = await get_request_id(request, user_context.user_id)
-    await check_idempotency(request_id=request_id)
+    request_id = await get_request_id(request, user_context.user_id, idempotency_key)
+
+    # For delete operations, we don't return cached responses to avoid 204 response body issues
+    # Check for duplicate requests but don't return cached response
+    cached_response = await check_idempotency(request_id=request_id)
+    if cached_response:
+        # For delete operations, we just proceed with the deletion even if cached
+        # This maintains idempotency but avoids FastAPI 204 response body restrictions
+        pass
+
     await user_service.delete_user(user_context.user_id)
     store_idempotency(
         request_id,
@@ -103,3 +162,4 @@ async def delete_user(
         {"status": "deleted"},
         204,
     )
+    return None

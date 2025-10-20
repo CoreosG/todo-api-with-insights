@@ -190,9 +190,9 @@ The API follows a 5-layer architecture as defined in ADR-004:
 - `DELETE /api/v1/tasks/{task_id}` - Delete task
 
 #### Users
-- `GET /api/v1/users/{user_id}` - Get user profile
-- `PUT /api/v1/users/{user_id}` - Update user profile
-- `DELETE /api/v1/users/{user_id}` - Delete user
+- `GET /api/v1/users/` - Get user profile
+- `PUT /api/v1/users/` - Update user profile
+- `DELETE /api/v1/users/` - Delete user
 
 #### Health
 - `GET /health` - Health check endpoint
@@ -347,7 +347,8 @@ This script:
 
 ```bash
 cd api
-uvicorn src.main:app --reload --host 0.0.0.0 --port 8001
+pip install -r ./requirements.txt
+make serve-local
 ```
 
 ### API Documentation
@@ -356,52 +357,6 @@ uvicorn src.main:app --reload --host 0.0.0.0 --port 8001
 - **ReDoc**: http://localhost:8000/redoc
 - **OpenAPI Spec**: http://localhost:8000/openapi.json
 
-### Testing API Endpoints
-
-#### Using curl
-
-```bash
-# Health check
-curl http://localhost:8000/health
-
-# Create task (with authentication headers)
-curl -X POST http://localhost:8000/api/v1/tasks \
-  -H "Content-Type: application/json" \
-  -H "X-User-ID: test-user-123" \
-  -H "X-User-Email: test@example.com" \
-  -H "X-User-Name: Test User" \
-  -d '{"title": "Test Task", "description": "Test Description"}'
-```
-
-#### Using Python requests
-
-```python
-import requests
-
-# Health check
-response = requests.get("http://localhost:8000/health")
-print(response.json())
-
-# Create task
-headers = {
-    "Content-Type": "application/json",
-    "X-User-ID": "test-user-123",
-    "X-User-Email": "test@example.com",
-    "X-User-Name": "Test User"
-}
-
-data = {
-    "title": "Test Task",
-    "description": "Test Description"
-}
-
-response = requests.post(
-    "http://localhost:8000/api/v1/tasks",
-    headers=headers,
-    json=data
-)
-print(response.json())
-```
 
 ### Code Quality
 
@@ -548,7 +503,7 @@ cdk deploy --all
 ```bash
 cd infra
 cdk deploy TodoApiStack     # API Gateway, Lambda, Cognito
-cdk deploy TodoDataStack     # DynamoDB, S3, Firehose
+cdk deploy TodoDataStack     # DynamoDB, Lambda CDC, S3, Firehose (buffer)
 cdk deploy TodoEtlStack      # Glue jobs, Athena
 cdk deploy TodoMonitoringStack  # CloudWatch, Alarms
 ```

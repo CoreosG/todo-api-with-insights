@@ -47,7 +47,7 @@ def main():
             endpoint_url="http://localhost:8000",
             region_name="us-east-1",
             aws_access_key_id="dummy",
-            aws_secret_access_key="dummy"
+            aws_secret_access_key="dummy",
         )
 
         # List tables to test connection
@@ -62,9 +62,11 @@ def main():
             print("Table 'todo-app-data' will be created by the tests.")
 
     except ClientError as e:
-        if e.response['Error']['Code'] == 'ResourceNotFoundException':
+        if e.response["Error"]["Code"] == "ResourceNotFoundException":
             print("Cannot connect to local DynamoDB.")
-            print("   Please start DynamoDB with: docker run -p 8000:8000 amazon/dynamodb-local")
+            print(
+                "   Please start DynamoDB with: docker run -p 8000:8000 amazon/dynamodb-local"
+            )
             return 1
         else:
             print(f"Error connecting to DynamoDB: {e}")
@@ -78,11 +80,15 @@ def main():
     print()
 
     # Run the tests
-    result = subprocess.run([
-        sys.executable, "-m", "pytest",
-        "tests/integration/test_api_gateway_integration_with_db.py",
-        "-v"
-    ])
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "pytest",
+            "tests/integration/test_api_gateway_integration_with_db.py",
+            "-v",
+        ]
+    )
 
     print()
     if result.returncode == 0:
@@ -91,7 +97,9 @@ def main():
         print("Some tests failed. Check the output above for details.")
         print()
         print("Troubleshooting tips:")
-        print("   - Make sure DynamoDB is running: docker run -p 8000:8000 amazon/dynamodb-local")
+        print(
+            "   - Make sure DynamoDB is running: docker run -p 8000:8000 amazon/dynamodb-local"
+        )
         print("   - Check that the endpoint URL is correct")
         print("   - Verify AWS credentials are set (dummy values work for local)")
 

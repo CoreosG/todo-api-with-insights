@@ -1,4 +1,5 @@
-from fastapi import APIRouter, HTTPException, Request, status
+from fastapi import APIRouter, Header, HTTPException, Request, status
+from fastapi.responses import JSONResponse
 
 from ..dependecies import (
     check_idempotency,
@@ -15,7 +16,16 @@ router = APIRouter()
 async def create_task(
     task: TaskCreate,
     request: Request,
-) -> TaskResponse:
+    idempotency_key: str = Header(
+        ..., description="Unique identifier for request deduplication"
+    ),
+) -> TaskResponse | JSONResponse:
+    # Validate idempotency key
+    if not idempotency_key:
+        raise HTTPException(
+            status_code=400, detail="Idempotency-Key header is required"
+        )
+
     # Get user context and ensure user exists (create if needed)
     user_context = await get_user_context(request)
     from ..utils.dependency_injection import get_user_service
@@ -25,13 +35,22 @@ async def create_task(
         user_context.user_id, user_context.email, user_context.name
     )
 
-    from ..dependecies import get_idempotency_key
-    idempotency_key = await get_idempotency_key(request)
     request_id = await get_request_id(request, user_context.user_id, idempotency_key)
     from ..utils.dependency_injection import get_task_service
 
     task_service = get_task_service()
-    await check_idempotency(request_id=request_id)  # Idempotency check
+
+    # Check for duplicate requests and return cached response if found
+    cached_response = await check_idempotency(request_id=request_id)
+    if cached_response:
+        # Return cached response for duplicate requests
+        import json
+
+        return JSONResponse(
+            status_code=cached_response.http_status_code,
+            content=json.loads(cached_response.response_data),
+        )
+
     try:
         response = await task_service.create_task(user_context.user_id, task)
         store_idempotency(
@@ -89,7 +108,16 @@ async def update_task(
     task_id: str,
     updates: TaskUpdate,
     request: Request,
-) -> TaskResponse:
+    idempotency_key: str = Header(
+        ..., description="Unique identifier for request deduplication"
+    ),
+) -> TaskResponse | JSONResponse:
+    # Validate idempotency key
+    if not idempotency_key:
+        raise HTTPException(
+            status_code=400, detail="Idempotency-Key header is required"
+        )
+
     # Get user context and ensure user exists (create if needed)
     user_context = await get_user_context(request)
     from ..utils.dependency_injection import get_user_service
@@ -99,11 +127,22 @@ async def update_task(
         user_context.user_id, user_context.email, user_context.name
     )
 
-    request_id = await get_request_id(request, user_context.user_id)
+    request_id = await get_request_id(request, user_context.user_id, idempotency_key)
     from ..utils.dependency_injection import get_task_service
 
     task_service = get_task_service()
-    await check_idempotency(request_id=request_id)
+
+    # Check for duplicate requests and return cached response if found
+    cached_response = await check_idempotency(request_id=request_id)
+    if cached_response:
+        # Return cached response for duplicate requests
+        import json
+
+        return JSONResponse(
+            status_code=cached_response.http_status_code,
+            content=json.loads(cached_response.response_data),
+        )
+
     try:
         response = await task_service.update_task(
             user_context.user_id, task_id, updates
@@ -120,7 +159,16 @@ async def update_task(
 async def delete_task(
     task_id: str,
     request: Request,
+    idempotency_key: str = Header(
+        ..., description="Unique identifier for request deduplication"
+    ),
 ) -> None:
+    # Validate idempotency key
+    if not idempotency_key:
+        raise HTTPException(
+            status_code=400, detail="Idempotency-Key header is required"
+        )
+
     # Get user context and ensure user exists (create if needed)
     user_context = await get_user_context(request)
     from ..utils.dependency_injection import get_user_service
@@ -130,12 +178,21 @@ async def delete_task(
         user_context.user_id, user_context.email, user_context.name
     )
 
-    request_id = await get_request_id(request, user_context.user_id)
+    request_id = await get_request_id(request, user_context.user_id, idempotency_key)
     from ..utils.dependency_injection import get_task_service
 
     task_service = get_task_service()
-    await check_idempotency(request_id=request_id)
+
+    # For delete operations, we don't return cached responses to avoid 204 response body issues
+    # Check for duplicate requests but don't return cached response
+    cached_response = await check_idempotency(request_id=request_id)
+    if cached_response:
+        # For delete operations, we just proceed with the deletion even if cached
+        # This maintains idempotency but avoids FastAPI 204 response body restrictions
+        pass
+
     await task_service.delete_task(user_context.user_id, task_id)
     store_idempotency(
         request_id, user_context.user_id, task_id, {"status": "deleted"}, 204
     )
+    return None

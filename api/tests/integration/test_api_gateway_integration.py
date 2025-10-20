@@ -106,7 +106,7 @@ class TestLambdaAPIGatewayIntegration:
         # Create authenticated event
         event = create_authenticated_api_gateway_event(
             method="GET",
-            path=f"/api/v1/users/{user_id}",
+            path="/api/v1/users",
             user_id=user_id,
             email=email,
             name=name,
@@ -163,7 +163,6 @@ class TestLambdaAPIGatewayIntegration:
 
         mock_task_service.task_repo.create_task.return_value = TaskResponse(
             id=task_id,
-            user_id=user_id,
             title="Test Task",
             description="Test Description",
             priority="medium",
@@ -179,6 +178,7 @@ class TestLambdaAPIGatewayIntegration:
             name=name,
             title="Test Task",
             description="Test Description",
+            idempotency_key="test-idempotency-key-123",
         )
 
         # Patch the dependency injection functions
@@ -225,7 +225,6 @@ class TestLambdaAPIGatewayIntegration:
         mock_task_service.task_repo.get_tasks.return_value = [
             TaskResponse(
                 id=task_id,
-                user_id=user_id,
                 title="Retrieved Task",
                 description="Retrieved Description",
                 priority="high",
@@ -282,7 +281,6 @@ class TestLambdaAPIGatewayIntegration:
 
         mock_task_service.task_repo.get_task.return_value = TaskResponse(
             id=task_id,
-            user_id=user_id,
             title="Original Task",
             description="Original Description",
             priority="medium",
@@ -293,7 +291,6 @@ class TestLambdaAPIGatewayIntegration:
         )
         mock_task_service.task_repo.update_task.return_value = TaskResponse(
             id=task_id,
-            user_id=user_id,
             title="Updated Task",
             description="Updated Description",
             priority="high",
@@ -312,6 +309,7 @@ class TestLambdaAPIGatewayIntegration:
             description="Updated Description",
             priority="high",
             status="in_progress",
+            idempotency_key="test-update-idempotency-key-123",
         )
 
         # Patch the dependency injection functions
@@ -355,7 +353,11 @@ class TestLambdaAPIGatewayIntegration:
         mock_task_service.task_repo.delete_task = AsyncMock()
 
         event = create_task_delete_event(
-            user_id=user_id, email=email, name=name, task_id=task_id
+            user_id=user_id,
+            email=email,
+            name=name,
+            task_id=task_id,
+            idempotency_key="test-delete-idempotency-key-123",
         )
 
         # Patch the dependency injection functions
@@ -372,7 +374,7 @@ class TestLambdaAPIGatewayIntegration:
     def test_missing_authentication(self):
         """Test that endpoints properly handle missing authentication."""
         event = create_unauthenticated_api_gateway_event(
-            method="GET", path="/api/v1/users/test-user"
+            method="GET", path="/api/v1/users"
         )
 
         response = handler(event, {})
@@ -451,7 +453,6 @@ class TestLambdaAPIGatewayIntegration:
 
         mock_task_service.task_repo.create_task.return_value = TaskResponse(
             id=task_id,
-            user_id=user_id,
             title="Idempotency Task",
             description="Test Description",
             priority="medium",
@@ -513,7 +514,6 @@ class TestLambdaAPIGatewayIntegration:
 
         mock_task_service.task_repo.get_task.return_value = TaskResponse(
             id=task_id,
-            user_id=user1_id,
             title="User 1 Task",
             description="Only User 1 can see this",
             priority="high",
@@ -599,7 +599,6 @@ class TestLambdaAPIGatewayIntegration:
         mock_task_service.task_repo.get_tasks.return_value = [
             TaskResponse(
                 id=task1_id,
-                user_id=user_id,
                 title="Bulk Task 1",
                 description="First task",
                 priority="high",
@@ -610,7 +609,6 @@ class TestLambdaAPIGatewayIntegration:
             ),
             TaskResponse(
                 id=task2_id,
-                user_id=user_id,
                 title="Bulk Task 2",
                 description="Second task",
                 priority="medium",
@@ -621,7 +619,6 @@ class TestLambdaAPIGatewayIntegration:
             ),
             TaskResponse(
                 id=task3_id,
-                user_id=user_id,
                 title="Bulk Task 3",
                 description="Third task",
                 priority="low",

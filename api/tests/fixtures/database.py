@@ -33,7 +33,7 @@ def create_dynamodb_table(table_name: str = "todo-app-data") -> boto3.resource:
         # Try to get existing table first
         table = dynamodb.Table(table_name)
         # Check if table exists by trying to describe it
-        table.table_status
+        _ = table.table_status
         print(f"Using existing table: {table_name}")
         return table
     except Exception:
