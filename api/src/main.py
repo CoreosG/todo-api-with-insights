@@ -16,7 +16,7 @@ from .controllers.user_controller import router as user_router
 
 # Configure logging
 logging.basicConfig(
-    level=logging.DEBUG if os.getenv("DEBUG") == "true" else logging.INFO,
+    level=logging.DEBUG if os.getenv("DEBUG") == "true" else logging.INFO, #remove in real production, since it's a challenge, i'll keep.
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
 )
 
@@ -44,18 +44,23 @@ app = FastAPI(
 
 # Idempotency-Key dependency is defined in dependencies.py
 
-# CORS middleware for local development
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "http://localhost:8080",
-        "http://localhost:3001",  # Add your frontend URLs
-    ],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# CORS middleware for production, checking for USE_LOCAL_DYNAMODB variable to determine if we're in local development.
+if os.getenv("USE_LOCAL_DYNAMODB") == "true":
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["http://localhost:3000", "http://localhost:8080", "http://localhost:3001"],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+else:
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"], #TODO: change to only allow origins from specific domains, since it's a challenge, i'll keep.
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
 
 
 # Global exception handlers
@@ -111,20 +116,28 @@ async def add_event_to_request(
     request: Request, call_next: Callable[[Request], Awaitable[Response]]
 ) -> Response:
     """Attach API Gateway event to request state for authentication extraction."""
-    # Check for test API Gateway event in headers (for testing)
-    api_gateway_event_header = request.headers.get("X-API-Gateway-Event")
-    if api_gateway_event_header:
+    
+    # In production with Mangum, the API Gateway event is in request.scope
+    if hasattr(request.scope, 'get') and 'aws.event' in request.scope:
+        request.state.event = request.scope['aws.event']
+    
+    # For local testing with custom header
+    elif api_gateway_event_header := request.headers.get("X-API-Gateway-Event"):
         try:
             event_data = json.loads(api_gateway_event_header)
             request.state.event = event_data
-        except json.JSONDecodeError:
-            # Invalid JSON, continue without setting event
-            pass
-
-    # For Mangum, the event is available in request.scope or state
-    # This is a placeholder; in production, ensure event is passed correctly
+        except json.JSONDecodeError as e:
+            logging.getLogger(__name__).warning(f"Invalid API Gateway event JSON: {e}")
+    
+    # Fallback: check if Mangum stored it elsewhere
+    elif hasattr(request, 'scope') and isinstance(request.scope, dict):
+        # Mangum stores the original event here
+        request.state.event = request.scope.get('aws.event', {})
+    
     response = await call_next(request)
     return response
+
+# TODO: add correlation id to the request, won't do it, the rest should be good for this challenge.
 
 
 # For AWS Lambda (API Gateway + Lambda)
