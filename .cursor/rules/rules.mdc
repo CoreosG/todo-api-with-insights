@@ -7,29 +7,56 @@ alwaysApply: true
 - Prioritize readability over cleverness; add docstrings when logic isn't obvious.
 - Align with serverless-first architecture from ADR-000 for simplicity and cost efficiency.
 
-# Python
-- Use FastAPI for the API (as per ADR decisions); expose OpenAPI/Swagger for documentation and validation.
-- Enforce ruff+black+mypy clean before commit (`make lint` must pass).
-- Validate inputs with pydantic on every API boundary.
-- Write/maintain tests for new endpoints and bug fixes (pytest).
-- Emit structured JSON logs (via logging library) for CloudWatch integration.
+# Architecture (ADR-000)
+- Implement serverless-first architecture using AWS managed services (Lambda, API Gateway, S3, DynamoDB, Cognito).
+- Use API Gateway + Cognito for authentication and JWT-based user pools.
+- Implement asynchronous processing with SQS for reliable task creation.
+- Use DynamoDB Streams for real-time Change Data Capture (CDC) to enable data lake feeds.
+- Store raw data in S3 Bronze layer (Parquet, partitioned by year/month/day/user_id).
+- Use Glue for data transformations (Silver layer) and Athena for analytics (Gold layer).
+- Implement comprehensive CloudWatch monitoring with dashboards and alarms.
 
-# Data & ETL (Tie into ADR-001)
-- Prefer schema evolution-friendly formats (e.g., Parquet). Partition S3 data by date (year/month/day) unless justified otherwise.
-- Ensure idempotency for ETL writes; implement safe retries with exponential backoff.
-- Leverage DynamoDB Streams for CDC as selected in ADR-001 to enable real-time data lake feeds.
-- Keep ETL jobs lightweight and event-driven (e.g., via Lambda triggers) for cost optimization.
+# Python & API (ADR-004)
+- Use FastAPI for the API with automatic OpenAPI 3.0 documentation generation.
+- Implement 5-layer architecture: Entrypoint → Controller → Service → Repository → Database.
+- Use Repository pattern to abstract database operations and enable testability.
+- Validate inputs with Pydantic on every API boundary with custom validators.
+- Use async/await patterns for efficient concurrent DynamoDB operations.
+- Deploy with Mangum ASGI adapter for AWS Lambda integration.
+- Use Lambda Layers for shared code across functions (sync, async, CDC).
 
-# Observability
-- Emit structured logs (JSON) with request_id and user_id where available.
-- Expose minimal, meaningful metrics for API (e.g., latency, error rate) and ETL (e.g., job duration).
-- Integrate with CloudWatch for dashboards and alarms as per ADR-000.
+# Database (ADR-001, ADR-002, ADR-003)
+- Use DynamoDB with On-Demand capacity mode for serverless scaling.
+- Implement single-table design with user-scoped partition keys (USER#{user_id}).
+- Use Global Secondary Indexes for user-specific queries (status, due_date, priority, category).
+- Structure: PK=TASK#{user_id}, SK=TASK#{task_id} for tasks; PK=USER#{user_id}, SK=METADATA for users.
+- Include idempotency records with TTL for duplicate request handling.
+- Use conditional expressions for safe concurrent writes.
 
-# Infra
-- Tag all AWS resources: Project, Owner, Environment, CostCenter.
-- Use least-privilege IAM policies; review before applying IaC.
-- Provide teardown instructions for all deployments to avoid cost drift.
-- Prefer serverless services (e.g., Lambda, S3) over containers for this workload, aligning with ADR-000's scalability and cost drivers.
+# Data & ETL (ADR-005)
+- Implement hybrid ETL pipeline: Lambda for real-time CDC, Glue for batch aggregations.
+- Use Firehose for log buffering and Parquet conversion (60s intervals).
+- Partition S3 data by event_date (from task created_at) and user_id for efficient Athena queries.
+- Use Glue Catalog/Crawler for schema inference and table federation.
+- Ensure idempotency with record IDs and safe retries with exponential backoff.
+- Keep jobs lightweight and event-driven via DynamoDB Streams and CloudWatch subscriptions.
+
+# Observability (ADR-006)
+- Emit structured JSON logs with request_id, user_id, component, operation, and metadata.
+- Use CloudWatch Logs Groups per component with 30-day retention.
+- Forward logs to Firehose for S3 archival and long-term Athena analysis.
+- Monitor API metrics: request count, latency (P50/P95/P99), error rates, 4XX/5XX responses.
+- Monitor ETL metrics: Firehose throughput, Glue job duration, Athena scan volumes.
+- Monitor database metrics: DynamoDB RCU/WCU, throttling events, stream processing lag.
+- Implement alarms for >5% error rates, >1000ms P99 latency, and pipeline failures.
+
+# Infrastructure as Code (ADR-007)
+- Use AWS CDK (Python) for single-command deployments (`cdk deploy --all`).
+- Structure as multiple stacks: ApiStack, DataStack, EtlStack, MonitoringStack.
+- Tag all resources: Project=todo-api-with-insights, Owner=development-team, Environment, CostCenter.
+- Implement least-privilege IAM policies with granular permissions.
+- Use CDK bootstrap for environment setup and drift detection.
+- Provide complete teardown instructions (`cdk destroy --all`).
 
 # Collaboration & Documentation
 - When using AI for ADR-related tasks (e.g., drafting or updating based on new decisions), generate a prompt file in `.cursor/prompts/` automatically, including placeholders for manual input like rationale and validation.

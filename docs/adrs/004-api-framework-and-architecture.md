@@ -131,7 +131,7 @@ class TaskResponse(BaseModel):
 
 ### Repository Pattern and Layered Architecture
 
-The API implementation follows a clean architecture pattern with clear separation of concerns across five layers: **Entrypoint → Controller → Service → Repository → Database**. This design decouples database operations from business logic, enables comprehensive testing, and supports code reusability across Lambda functions (Sync, Async, CDC) through Lambda Layers.
+The API implementation follows a clean architecture pattern with clear separation of concerns across five layers: **Entrypoint → Controller → Service → Repository → Database**. This design decouples database operations from business logic, enables comprehensive testing, and supports code reusability across Lambda functions (Sync, CDC) through Lambda Layers.
 
 #### Architecture Layers Overview
 

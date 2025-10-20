@@ -129,7 +129,6 @@ app.synth()
 - **API Gateway**: REST API with CORS, throttling, and request validation
 - **Lambda Functions**: FastAPI application deployment with provisioned concurrency
 - **Cognito User Pool**: Authentication with JWT token configuration
-- **SQS Queue**: Async task processing queue with FIFO ordering
 
 **Data Stack (from ADR-001/ADR-003):**
 - **DynamoDB Table**: Single-table design with GSI configuration and on-demand capacity

@@ -81,6 +81,83 @@ TTL: expiration_timestamp (Unix timestamp for automatic cleanup)
 - ❌ **No Global Queries**: Cannot efficiently query across all users for a specific attribute (e.g., "all pending tasks across all users") without table scans
 - ❌ **GSI Proliferation**: Requires 4 GSIs to support all attribute-based queries within user scope
 
+### DynamoDB Table Structure Overview
+
+| Component | Key Schema | Purpose | Query Patterns |
+|-----------|------------|---------|----------------|
+| **Main Table** | PK: `USER#{user_id}` \| `TASK#{user_id}` \| `IDEMPOTENCY#{request_id}`<br>SK: `METADATA` \| `TASK#{task_id}` | Primary data storage | Direct entity lookups, user-scoped task lists |
+| **GSI1 (Status)** | PK: `USER#{user_id}`<br>SK: `STATUS#{status}#{task_id}` | Status-based filtering | `get_tasks_by_status()`, `get_pending_tasks()` |
+| **GSI2 (Due Date)** | PK: `USER#{user_id}`<br>SK: `DUEDATE#{due_date}#{task_id}` | Date-based filtering | `get_tasks_by_due_date()`, `get_overdue_tasks()` |
+| **GSI3 (Priority)** | PK: `USER#{user_id}`<br>SK: `PRIORITY#{priority}#{task_id}` | Priority-based filtering | `get_tasks_by_priority()`, `get_high_priority_tasks()` |
+| **GSI4 (Category)** | PK: `USER#{user_id}`<br>SK: `CATEGORY#{category}#{task_id}` | Category-based filtering | `get_tasks_by_category()`, `get_tasks_by_tag()` |
+
+```mermaid
+erDiagram
+    DYNAMODB-TABLE {
+        PK string
+        SK string
+        GSI1PK string
+        GSI1SK string
+        GSI2PK string
+        GSI2SK string
+        GSI3PK string
+        GSI3SK string
+        GSI4PK string
+        GSI4SK string
+    }
+
+    USER {
+        PK "USER#001"
+        SK "METADATA"
+        email string
+        name string
+        created_at number
+        updated_at number
+    }
+
+    TASK {
+        PK "TASK#001"
+        SK "TASK#task-001"
+        GSI1PK "USER#001"
+        GSI1SK "STATUS#pending#task-001"
+        GSI2PK "USER#001"
+        GSI2SK "DUEDATE#2024-01-15#task-001"
+        GSI3PK "USER#001"
+        GSI3SK "PRIORITY#high#task-001"
+        GSI4PK "USER#001"
+        GSI4SK "CATEGORY#development#task-001"
+        title string
+        description string
+        status string
+        priority string
+        category string
+        due_date string
+        created_at number
+        updated_at number
+        completed_at number
+    }
+
+    IDEMPOTENCY {
+        PK "IDEMPOTENCY#req-123"
+        SK "METADATA"
+        response_data string
+        target_task_pk string
+        target_task_sk string
+        http_status_code number
+        created_at number
+    }
+
+    DYNAMODB-TABLE ||--o{ USER : contains
+    DYNAMODB-TABLE ||--o{ TASK : contains
+    DYNAMODB-TABLE ||--o{ IDEMPOTENCY : contains
+
+    USER }o--|| TASK : owns
+    TASK }o--|| GSI1 : "queries by status"
+    TASK }o--|| GSI2 : "queries by due_date"
+    TASK }o--|| GSI3 : "queries by priority"
+    TASK }o--|| GSI4 : "queries by category"
+```
+
 ### Entity Attribute Definitions
 
 **Users Attributes:**
@@ -136,6 +213,13 @@ TTL: expiration_timestamp (Unix timestamp for automatic cleanup)
 | **Delete task** | DeleteItem operation | Single item delete | 0.5 WCU |
 | **Idempotency check** | `PK = IDEMPOTENCY#{request_id}` | Single item lookup | 0.5 RCU |
 | **Idempotency cleanup** | Automatic via TTL | No query needed | 0 RCU |
+| **Create user** | `PK = USER#{user_id}, SK = METADATA` | Single item write | 1 WCU |
+| **Update user** | `PK = USER#{user_id}, SK = METADATA` | Single item write | 1 WCU |
+| **Delete user** | DeleteItem operation | Single item delete | 0.5 WCU |
+| **Get all users** | Scan with SK = METADATA filter | Full table scan | ~50-200 RCU for large datasets |
+| **Bulk update task status** | BatchWriteItem for multiple tasks | Batch operation | 1.5 WCU per item |
+| **Bulk delete tasks** | BatchWriteItem with DeleteRequest | Batch operation | 0.5 WCU per item |
+| **Search tasks by title** | Scan with filter expression | Full table scan | ~50-500 RCU depending on dataset size |
 
 ### Time To Live (TTL) Strategy
 

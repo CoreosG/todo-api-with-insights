@@ -115,7 +115,7 @@ CloudWatch provides seamless integration with all AWS services in the architectu
   "level": "INFO",
   "request_id": "abc-123-def-456",
   "user_id": "user-789",
-  "component": "api-gateway|lambda-sync|lambda-async|lambda-cdc",
+  "component": "api-gateway|lambda-sync|lambda-cdc",
   "operation": "create-task|update-task|query-tasks|process-cdc",
   "duration_ms": 150,
   "status": "success|error",
@@ -200,7 +200,7 @@ CloudWatch provides seamless integration with all AWS services in the architectu
 - Set up method-level metrics for endpoint performance tracking
 
 ### Lambda Functions Integration (ADR-004/ADR-005)
-- Implement structured logging with correlation IDs across sync/async/CDC functions
+- Implement structured logging with correlation IDs across sync/CDC functions
 - Track cold start metrics and memory utilization for performance optimization
 - Monitor concurrent execution limits and timeout events
 

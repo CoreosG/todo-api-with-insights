@@ -229,7 +229,7 @@
 |Cost Optimization |Pay-per-execution. Cost is zero when idle and scales precisely with usage. Highly favorable for a minimal To-Do application. | Pay-for-provisioned capacity | Serverless is inherently more cost-efficient for low-to-moderate, bursty/unknown workloads.
 | Scalability | Automatic, Elastic, and Instant. Scales from zero to high concurrency transparently. | Requires configuration (Auto Scaling Groups, Fargate profiles, or Kubernetes HPA). Slower to react from zero. | Automatic scaling is a core strength of serverless, ensuring high API health and performance under load.
 | API/Compute | AWS Lambda integrated with API Gateway. Python runtime. |Amazon ECS/Fargate with an Application Load Balancer (ALB). | Lambda/API Gateway provides built-in authorization (Cognito), request validation, and an immediate response to the request's event-driven nature.
-| ETL/Data Processing | DynamoDB SQS/Lambda/Glue. Event-driven and cost-optimized processing | ECS/Fargate tasks scheduled by EventBridge. | Serverless services like DynamoDB Streams and Lambda natively support event-driven pipelines, simplifying the data ingestion side of the Data Lake requirement.
+| ETL/Data Processing | DynamoDB/Lambda/Glue. Event-driven and cost-optimized processing | ECS/Fargate tasks scheduled by EventBridge. | Serverless services like DynamoDB Streams and Lambda natively support event-driven pipelines, simplifying the data ingestion side of the Data Lake requirement.
 | AWS / Portable considerations | High vendor lock-in, code written for the cloud FaaS model and integrated services | Low lock-in, container images are portable. | Since it's a test scenario, i'll leverage what i can from AWS, apart form that, containers aren't good for this scenario
 
 
@@ -256,8 +256,6 @@
 |-----------|-------------|-----------|
 | API Gateway + Auth | API Gateway + Cognito | API Gateway handles REST routing, throttling, and caching; Cognito provides JWT-based user pools for secure, managed authentication without custom token handling. Aligns with security best practices (least privilege, no self-managed secrets). |
 | Synchronous Operations (CRUD) | Lambda (Sync) | Serverless functions for immediate response to GET/PUT/DEL requests; auto-scales to handle bursts; integrates natively with API Gateway for low-latency execution (<100ms cold starts with provisioned concurrency if needed). |
-| Asynchronous Queuing | SQS | Decouples POST task creation from immediate processing; ensures reliable delivery for high-throughput writes; FIFO queue optional for task ordering per user. |
-| Asynchronous Processing | Lambda (Async) | Polls SQS for batched task processing; cost-effective for variable loads; enables idempotent writes to DynamoDB with conditional expressions. |
 | Persistence | DynamoDB | NoSQL for flexible schema (single-table design: PK=user_id, SK=task_id); auto-scales reads/writes; global tables unnecessary for regional app; cheaper than RDS for sparse, key-value access patterns. |
 | Change Data Capture | DynamoDB Streams | Captures real-time inserts/updates/deletes on tasks; low-latency (seconds) for event-driven ETL; shards by partition key for parallel processing. |
 | CDC Processing | Lambda (CDC) | Triggers on Streams for insert-only extraction (filter deletes if needed); transforms to Parquet schema; handles failures with DLQ. Event-driven over scheduled for freshness. |
@@ -272,22 +270,14 @@ graph TD
     Client --> AG[API Gateway + Cognito]
     
     %% API Layer
-    AG -->|POST| SQS
-    AG -->|GET/PUT/DEL| L1[Lambda Sync]
+    AG -->|POST/GET/PUT/DEL| L1[Lambda Sync]
     AG -->|4XX/5XX Latency| CWM[CloudWatch Metrics]
-    
-    %% Sync Lambda Flow
+
+    %% Lambda Flow
     L1 --> DDB[DynamoDB]
     L1 --> CW[CloudWatch Logs]
     CW -->|Subscription Filter| FH[Firehose]
     FH --> S3B[S3 Bronze]
-    
-    %% Async Flow
-    SQS -->|Poll Batch=10| L2[Lambda Async]
-    L2 --> DDB
-    L2 --> CW
-    CW --> FH
-    L2 -->|TasksProcessed| CWM
     
     %% CDC Flow
     DDB --> DS[DynamoDB Streams]
@@ -305,11 +295,9 @@ graph TD
     
     %% Observability Layer
     L1 -->|Duration Errors| CWM
-    L2 -->|Duration Errors| CWM
     L3 -->|Duration Errors| CWM
     FH -->|IncomingBytes| CWM
     DDB -->|ConsumedRCU| CWM
-    SQS -->|MessagesVisible| CWM
     GC -->|CrawlerDuration| CWM
     GS -->|JobDuration| CWM
     A -->|BytesScanned| CWM
@@ -324,7 +312,7 @@ graph TD
     classDef obs fill:#e8f5e8
     classDef dlake fill:#fff3e0
     
-    class AG,L1,L2,L3,SQS api
+    class AG,L1,L3 api
     class DDB,S3B,GC,GS,A,GG dlake
     class CW,FH,CWM,Alarms,Dashboard obs
 ```

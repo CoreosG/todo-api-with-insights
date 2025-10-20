@@ -3,8 +3,7 @@ graph TD
     Client --> AG[API Gateway + Cognito]
     
     %% API Layer
-    AG -->|POST| SQS
-    AG -->|GET/PUT/DEL| L1[Lambda Sync]
+    AG -->|POST/GET/PUT/DEL| L1[Lambda Sync]
     AG -->|4XX/5XX Latency| CWM[CloudWatch Metrics]
     
     %% Sync Lambda Flow
@@ -12,13 +11,6 @@ graph TD
     L1 --> CW[CloudWatch Logs]
     CW -->|Subscription Filter| FH[Firehose]
     FH --> S3B[S3 Bronze]
-    
-    %% Async Flow
-    SQS -->|Poll Batch=10| L2[Lambda Async]
-    L2 --> DDB
-    L2 --> CW
-    CW --> FH
-    L2 -->|TasksProcessed| CWM
     
     %% CDC Flow
     DDB --> DS[DynamoDB Streams]
@@ -36,11 +28,9 @@ graph TD
     
     %% Observability Layer
     L1 -->|Duration Errors| CWM
-    L2 -->|Duration Errors| CWM
     L3 -->|Duration Errors| CWM
     FH -->|IncomingBytes| CWM
     DDB -->|ConsumedRCU| CWM
-    SQS -->|MessagesVisible| CWM
     GC -->|CrawlerDuration| CWM
     GS -->|JobDuration| CWM
     A -->|BytesScanned| CWM
@@ -55,6 +45,6 @@ graph TD
     classDef obs fill:#e8f5e8
     classDef dlake fill:#fff3e0
     
-    class AG,L1,L2,L3,SQS api
+    class AG,L1,L3 api
     class DDB,S3B,GC,GS,A,GG dlake
     class CW,FH,CWM,Alarms,Dashboard obs

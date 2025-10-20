@@ -15,7 +15,8 @@
 
    ### Changed
    - Updated System_architecture.md Mermaid diagram to include CloudWatch Metrics integration for ETL observability (added arrows from Glue Catalog and Athena to CloudWatch for better alignment with ADR-006).
-   - Enhanced System_architecture.md with additional metrics links: Firehose, DynamoDB, Streams, Lambda Sync, and Lambda Async to CloudWatch Metrics for complete API and ETL observability.
+   - Enhanced System_architecture.md with additional metrics links: Firehose, DynamoDB, Streams, Lambda Sync to CloudWatch Metrics for complete API and ETL observability.
+   - Simplified architecture by removing SQS queue and consolidating to single Lambda handler across all ADRs (000, 004, 005, 006, 007).
    - Refined ADR prompts in `.cursor/prompts/` for better AI-assisted documentation.
    - Enhanced ADR-004 with comprehensive Repository pattern implementation details, including 5-layer architecture (Entrypoint → Controller → Service → Repository → Database) and Lambda Layers for code sharing across Lambda functions.
 
