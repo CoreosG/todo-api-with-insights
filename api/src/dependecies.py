@@ -37,9 +37,31 @@ async def get_request_id(
 async def get_user_context(request: Request) -> UserContext:
     """Extract user context from API Gateway event context (Cognito authorizer)."""
     # For FastAPI in Lambda, extract from request context (via Mangum or direct event)
-    # In production, use event["requestContext"]["authorizer"]["claims"]
-    event = getattr(request.state, "event", {})
-    claims = event.get("requestContext", {}).get("authorizer", {}).get("claims", {})
+    # In production, use event["requestContext"]["authorizer"]["jwt"]["claims"] for HTTP API v2.0
+    event = None
+
+    # Try to get event from Mangum's scope first (primary method for Lambda)
+    if hasattr(request, "scope") and request.scope.get("aws.event"):
+        event = request.scope["aws.event"]
+    # Fallback to request.state.event (for testing or direct event passing)
+    elif hasattr(request.state, "event"):
+        event = request.state.event
+
+    if not event:
+        raise HTTPException(
+            status_code=401, detail="Unauthorized: No API Gateway event found"
+        )
+
+    # Handle both API Gateway v1.0 (REST API) and v2.0 (HTTP API) formats
+    request_context = event.get("requestContext", {})
+    authorizer = request_context.get("authorizer", {})
+
+    # Try HTTP API v2.0 format first (requestContext.authorizer.jwt.claims)
+    claims = authorizer.get("jwt", {}).get("claims", {})
+
+    # Fallback to REST API v1.0 format (requestContext.authorizer.claims)
+    if not claims and "claims" in authorizer:
+        claims = authorizer["claims"]
 
     user_id = claims.get("sub")
     email = claims.get("email")
@@ -59,7 +81,7 @@ async def get_user_context(request: Request) -> UserContext:
     )
 
 
-# Extract user_id from request context (for API Gateway integration) - backward compatibility
+# Extract user_id from request context (for API Gateway integration) 
 async def get_user_id(request: Request) -> str:
     """Extract user_id from API Gateway event context (Cognito authorizer)."""
     user_context = await get_user_context(request)
@@ -71,7 +93,7 @@ async def get_idempotency_key(request: Request) -> str | None:
     """Extract idempotency key from request headers."""
     return request.headers.get("Idempotency-Key")
 
-
+#------------------------------------------------------------------------------------------------
 # Idempotency check function (placeholder - integrate with IdempotencyService if needed)
 async def check_idempotency(request_id: str) -> None:
     """Check for duplicate requests (placeholder - implement via IdempotencyService)."""
