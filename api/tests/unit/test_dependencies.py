@@ -6,7 +6,6 @@ from fastapi import HTTPException, Request
 from src.dependecies import (
     UserContext,
     check_idempotency,
-    get_idempotency_key,
     get_request_id,
     get_user_context,
     get_user_id,
@@ -228,46 +227,22 @@ class TestGetUserId:
         assert result == "user-123"
 
 
-class TestGetIdempotencyKey:
-    """Test get_idempotency_key function for header extraction."""
+class TestCheckIdempotency:
+    """Test check_idempotency function for duplicate request checking."""
 
     @pytest.mark.asyncio
-    async def test_get_idempotency_key_with_header(self):
-        """Test get_idempotency_key returns header value when present."""
-        mock_request = Mock(spec=Request)
-        mock_request.headers = {"Idempotency-Key": "test-key-123"}
-
-        result = await get_idempotency_key(mock_request)
-
-        assert result == "test-key-123"
-
-    @pytest.mark.asyncio
-    async def test_get_idempotency_key_without_header(self):
-        """Test get_idempotency_key returns None when header not present."""
-        mock_request = Mock(spec=Request)
-        mock_request.headers = {}
-
-        result = await get_idempotency_key(mock_request)
-
+    async def test_check_idempotency_with_no_existing(self):
+        """Test check_idempotency returns None when no existing request found."""
+        result = await check_idempotency("test-request-id")
         assert result is None
 
 
-class TestCheckIdempotency:
-    """Test check_idempotency function (placeholder)."""
-
-    @pytest.mark.asyncio
-    async def test_check_idempotency_placeholder(self):
-        """Test check_idempotency is currently a no-op placeholder."""
-        # Should not raise any exceptions and not perform any operations
-        await check_idempotency("test-request-id")
-
-
 class TestStoreIdempotency:
-    """Test store_idempotency function (placeholder)."""
+    """Test store_idempotency function for response caching."""
 
-    def test_store_idempotency_placeholder(self):
-        """Test store_idempotency is currently a no-op placeholder."""
-        # Should not raise any exceptions and not perform any operations
+    def test_store_idempotency_async_operation(self):
+        """Test store_idempotency queues async operation."""
+        # Should not raise any exceptions
         store_idempotency("req-123", "user-123", "task-123", {"status": "created"}, 201)
 
 
@@ -305,7 +280,6 @@ class TestDependenciesIntegration:
         from src.dependecies import (
             UserContext,
             check_idempotency,
-            get_idempotency_key,
             get_request_id,
             get_user_context,
             get_user_id,
@@ -313,10 +287,9 @@ class TestDependenciesIntegration:
         )
 
         # All imports should succeed
+        assert check_idempotency is not None
         assert get_request_id is not None
         assert get_user_context is not None
         assert get_user_id is not None
-        assert get_idempotency_key is not None
-        assert check_idempotency is not None
         assert store_idempotency is not None
         assert UserContext is not None

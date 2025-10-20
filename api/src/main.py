@@ -42,6 +42,7 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+# Idempotency-Key dependency is defined in dependencies.py
 
 # CORS middleware for local development
 app.add_middleware(
