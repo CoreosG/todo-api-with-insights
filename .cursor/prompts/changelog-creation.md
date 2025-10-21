@@ -10,4 +10,4 @@ Generate a changelog.md file and populate it with basic data so i can add the ch
 Objective:
 generate a changelog.md file with done features, since this is my first change to somethind made before i've felt the necessity to add the changelog.md now.
 
-commit link:
+commit link: 7ad8f135a73ed041c9d8c8c8216576ab0ca73dca
