@@ -9,7 +9,7 @@ from aws_cdk.aws_apigatewayv2_integrations import HttpLambdaIntegration
 from aws_cdk.aws_lambda import Runtime
 from aws_cdk.aws_lambda_python_alpha import PythonFunction
 from aws_cdk.aws_cognito import (
-    AuthFlow, SignInAliases, StandardAttributes, UserPool, 
+    AuthFlow, ClientAttributes, SignInAliases, StandardAttributes, UserPool,
     UserPoolClient, StandardAttribute
 )
 from aws_cdk.aws_iam import Role, ServicePrincipal, PolicyStatement, ManagedPolicy
@@ -80,6 +80,11 @@ class ApiStack(Stack):
             id_token_validity=Duration.hours(1), # Token validity duration
             refresh_token_validity=Duration.days(30), # Refresh token validity duration
             prevent_user_existence_errors=True, # Prevent user existence errors
+            read_attributes=ClientAttributes().with_standard_attributes(
+                email=True,
+                given_name=True,
+                family_name=True
+            )
         )
 
     # Create IAM Role
@@ -105,16 +110,13 @@ class ApiStack(Stack):
                 "dynamodb:Scan",
                 "dynamodb:UpdateItem",
                 "dynamodb:DeleteItem",
+                "dynamodb:BatchGetItem",
+                "dynamodb:BatchWriteItem",
             ],
             resources=[
                 self.table.table_arn,
                 f"{self.table.table_arn}/index/*" # GSI
             ],
-            conditions={
-                "StringEquals": {
-                    "dynamodb:LeadingKeys": ["USER#${cognito-identity.amazonaws.com:sub}"]
-                }
-            }
         )
 
     # Create IAM Role Policy
