@@ -10,7 +10,7 @@ from aws_lambda_powertools.utilities.typing import LambdaContext
 # Initialize AWS Lambda Powertools
 logger = Logger()
 tracer = Tracer()
-metrics = Metrics()
+metrics = Metrics(namespace="TodoApi/CDC")
 
 # Initialize AWS clients
 firehose_client = boto3.client("firehose")

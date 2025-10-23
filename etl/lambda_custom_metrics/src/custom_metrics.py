@@ -10,7 +10,7 @@ from aws_lambda_powertools.utilities.typing import LambdaContext
 # Initialize AWS Lambda Powertools
 logger = Logger()
 tracer = Tracer()
-metrics = Metrics()
+metrics = Metrics(namespace="TodoApi/CustomMetrics")
 
 # Initialize AWS clients
 dynamodb_client = boto3.client("dynamodb")
@@ -85,7 +85,7 @@ def _collect_user_metrics() -> List[Dict[str, Any]]:
         )
         total_users = user_count_response.get("Count", 0)
 
-        # Count active users (last 30 days)
+        # Count active users (last 30 days) - check for last_login field
         thirty_days_ago = datetime.utcnow() - timedelta(days=30)
         active_users_response = dynamodb_client.scan(
             TableName=TABLE_NAME,
@@ -98,7 +98,7 @@ def _collect_user_metrics() -> List[Dict[str, Any]]:
         )
         active_users = active_users_response.get("Count", 0)
 
-        # Count verified users
+        # Count verified users - check for verification_status field
         verified_users_response = dynamodb_client.scan(
             TableName=TABLE_NAME,
             FilterExpression="begins_with(PK, :user_prefix) AND verification_status = :verified",
