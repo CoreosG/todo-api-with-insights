@@ -6,3 +6,9 @@ CLIENT_ID=abcdgfe345323 # your client id
 PASSWORD=TempPassword1! # your password
 COGNITO_USERNAME= # your cognito username (optional)
 COGNITO_EMAIL= # your cognito email (optional)
+
+# Script configuration
+NUM_USERS=5 
+TASKS_PER_USER=10
+UPDATES_PER_TASK=4
+NON_INTERACTIVE=1

@@ -142,7 +142,7 @@ Invoke-WebRequest -Uri https://YOUR-API-ID.execute-api.us-east-1.amazonaws.com/h
 Create a test user in the Cognito User Pool:
 
 ```bash
-# Set variables from CDK output
+# Set variables from CDK output 
 USER_POOL_ID="us-east-1_YOUR-USER-POOL-ID"
 CLIENT_ID="YOUR-CLIENT-ID"
 USERNAME="testuser@example.com"
@@ -206,6 +206,7 @@ CREATE_TASK_RESPONSE=$(curl -X POST \
   https://YOUR-API-ID.execute-api.us-east-1.amazonaws.com/api/v1/tasks \
   -H "Authorization: Bearer $ID_TOKEN" \
   -H "Content-Type: application/json" \
+  -H "Idempotency-Key: test-idempotencykey-34343" \
   -d '{
     "title": "Test Task",
     "description": "This is a test task created via API",
@@ -336,7 +337,8 @@ export NON_INTERACTIVE=1
 #### Create User
 
 ```bash
-# Create another user
+# Create another user <Users are generated automatically when calling the API>
+# This endpoint is redundant since users are created seamlessly when callin the API
 CREATE_USER_RESPONSE=$(curl -X POST \
   https://YOUR-API-ID.execute-api.us-east-1.amazonaws.com/api/v1/users \
   -H "Authorization: Bearer $ACCESS_TOKEN" \
@@ -511,6 +513,331 @@ aws cognito-idp admin-delete-user \
 - **API Response Time:** < 500ms for typical operations
 - **Lambda Cold Start:** < 1 second (with provisioned concurrency if needed)
 
+## ETL Pipeline Testing
+
+### ETL Pipeline Overview
+
+The ETL (Extract, Transform, Load) pipeline processes data from DynamoDB streams and creates a data lake with Bronze, Silver, and Gold layers for analytics and reporting.
+
+### ETL Components
+
+- **Bronze Layer**: Raw data from DynamoDB streams and application logs
+- **Silver Layer**: Cleaned and transformed data from Bronze layer
+- **Gold Layer**: Analytics-optimized data with business metrics and KPIs
+- **Kinesis Firehose**: Real-time data ingestion from DynamoDB streams
+- **AWS Glue**: ETL jobs for data transformation
+- **S3 Buckets**: Data lake storage (Bronze, Silver, Gold layers)
+- **Athena**: Query engine for analytics
+- **Lambda Functions**: CDC processing and custom metrics collection
+
+### ETL Testing Steps
+
+#### 1. Deploy ETL Stack
+
+```bash
+# Navigate to infrastructure directory
+cd infra
+
+# Deploy ETL stack (includes S3, Firehose, Glue, Athena)
+cdk deploy TodoEtlStack --require-approval never
+```
+
+**Expected Output:**
+```
+✅ TodoEtlStack
+
+Outputs:
+TodoEtlStack.BronzeBucketName = todo-bronze-YOUR-ACCOUNT-us-east-1
+TodoEtlStack.SilverBucketName = todo-silver-YOUR-ACCOUNT-us-east-1
+TodoEtlStack.GoldBucketName = todo-gold-YOUR-ACCOUNT-us-east-1
+TodoEtlStack.FirehoseStreamName = todo-cdc-stream
+TodoEtlStack.GlueDatabaseName = todo_analytics
+TodoEtlStack.AthenaWorkgroupName = todo-analytics-workgroup
+```
+
+#### 2. Deploy Monitoring Stack
+
+```bash
+# Deploy monitoring stack (includes CloudWatch dashboard and alarms)
+cdk deploy TodoMonitoringStack --require-approval never
+```
+
+**Expected Output:**
+```
+✅ TodoMonitoringStack
+
+Outputs:
+TodoMonitoringStack.DashboardName = todo-api-dashboard
+TodoMonitoringStack.AlertTopicArn = arn:aws:sns:us-east-1:YOUR-ACCOUNT:todo-api-alerts
+```
+
+#### 3. Test ETL Pipeline
+
+##### Enable DynamoDB Streams
+
+```bash
+# Enable DynamoDB streams on the table
+aws dynamodb update-table \
+  --table-name todo-app-data \
+  --stream-specification StreamEnabled=true,StreamViewType=NEW_AND_OLD_IMAGES \
+  --region us-east-1
+```
+
+##### Create Test Data
+
+The ETL testing script (`test-etl.ps1` for Windows or `test-etl.sh` for Linux/Mac) automates the creation of test data to trigger CDC events. It creates multiple users, generates tasks for each user, and performs multiple updates to each task to simulate real-world usage patterns.
+
+**Configuration Setup:**
+
+Create a `.env` or `.env.txt` file in the `infra/scripts/` directory with the same configuration as the API testing:
+
+```bash
+# infra/scripts/.env
+API_ENDPOINT=https://YOUR-API-ID.execute-api.us-east-1.amazonaws.com
+REGION=us-east-1
+USER_POOL_ID=us-east-1_YOUR-USER-POOL-ID
+CLIENT_ID=YOUR-CLIENT-ID
+PASSWORD=TempPassword1!
+# Optional: Customize ETL data generation
+NUM_USERS=3
+TASKS_PER_USER=5
+UPDATES_PER_TASK=3
+```
+
+**Windows (PowerShell):**
+
+```powershell
+# Navigate to scripts directory
+cd infra\scripts
+
+# Option 1: Set variables via OS environment
+$Env:API_ENDPOINT = "https://YOUR-API-ID.execute-api.us-east-1.amazonaws.com"
+$Env:USER_POOL_ID = "us-east-1_YOUR-USER-POOL-ID"
+$Env:CLIENT_ID = "YOUR-CLIENT-ID"
+$Env:REGION = "us-east-1"
+# Optional AWS profile
+# $Env:AWS_PROFILE = "your-profile-name"
+
+# Option 2: Create .env.txt file in this folder (OS env takes precedence)
+# API_ENDPOINT=https://YOUR-API-ID.execute-api.us-east-1.amazonaws.com
+# REGION=us-east-1
+# USER_POOL_ID=us-east-1_YOUR-USER-POOL-ID
+# CLIENT_ID=YOUR-CLIENT-ID
+# PASSWORD=TempPassword1!
+# NUM_USERS=3
+# TASKS_PER_USER=5
+# UPDATES_PER_TASK=3
+
+# Run ETL testing script
+./test-etl.ps1
+```
+
+**Linux/Mac (Bash):**
+
+```bash
+# Navigate to scripts directory
+cd infra/scripts
+
+# Option 1: Set variables via OS environment
+export API_ENDPOINT="https://YOUR-API-ID.execute-api.us-east-1.amazonaws.com"
+export USER_POOL_ID="us-east-1_YOUR-USER-POOL-ID"
+export CLIENT_ID="YOUR-CLIENT-ID"
+export REGION="us-east-1"
+# Optional AWS profile
+# export AWS_PROFILE="your-profile-name"
+
+# Option 2: Create .env file in this folder (OS env takes precedence)
+# API_ENDPOINT=https://YOUR-API-ID.execute-api.us-east-1.amazonaws.com
+# REGION=us-east-1
+# USER_POOL_ID=us-east-1_YOUR-USER-POOL-ID
+# CLIENT_ID=YOUR-CLIENT-ID
+# PASSWORD=TempPassword1!
+# NUM_USERS=3
+# TASKS_PER_USER=5
+# UPDATES_PER_TASK=3
+
+# Run ETL testing script
+./test-etl.sh
+```
+
+**Script Features:**
+- Creates multiple Cognito users automatically
+- Generates tasks for each user with varied priorities and categories
+- Performs multiple updates to each task to simulate real usage
+- Uses unique idempotency keys to avoid duplicate processing
+- Provides detailed progress reporting and statistics
+
+**Expected Output:**
+```
+[*] Starting ETL Testing...
+API Endpoint: https://YOUR-API-ID.execute-api.us-east-1.amazonaws.com
+Users to create: 3
+Tasks per user: 5
+Updates per task: 3
+
+[STEP 1] Creating Users and Obtaining Tokens...
+Creating user 1/3...
+Setting up user: etl-user-1-20250101120000 (etl.user1.1234567890@example.com)
+Token obtained successfully
+User 1 ready with token
+
+[STEP 2] Creating and Updating Tasks for ETL Data Generation...
+Processing user 1 (etl-user-1-20250101120000)...
+Creating task 1/5...
+Created task: task-uuid-1
+Task task-uuid-1 updated (1/3)
+Task task-uuid-1 updated (2/3)
+Task task-uuid-1 updated (3/3)
+...
+
+[STEP 3] Verifying Data Generation in DynamoDB...
+Current table statistics:
+  Total items: 50
+  User records: 3
+  Task records: 15
+  Idempotency records: 18
+
+[COMPLETE] ETL Testing Complete!
+Users created: 3
+Tasks created: 15
+Task updates performed: 45
+Expected CDC events generated: 63
+```
+
+**This will generate DynamoDB stream events that trigger the ETL pipeline:**
+- Bronze layer: Raw CDC events from DynamoDB streams
+- Silver layer: Cleaned and transformed user/task data
+- Gold layer: Analytics and business metrics
+
+##### Monitor ETL Pipeline
+
+```bash
+# Check S3 buckets for data
+aws s3 ls s3://todo-bronze-YOUR-ACCOUNT-us-east-1/cdc/ --region us-east-1
+aws s3 ls s3://todo-silver-YOUR-ACCOUNT-us-east-1/ --region us-east-1
+aws s3 ls s3://todo-gold-YOUR-ACCOUNT-us-east-1/ --region us-east-1
+
+# Check CloudWatch logs for ETL jobs
+aws logs tail /aws/lambda/todo-cdc-function --region us-east-1
+aws logs tail /aws/lambda/todo-custom-metrics-function --region us-east-1
+```
+
+##### Run Glue Jobs
+
+```bash
+# Start Silver transformation job
+aws glue start-job-run \
+  --job-name todo-silver-transformation \
+  --arguments '{
+    "--BRONZE_BUCKET": "todo-bronze-YOUR-ACCOUNT-us-east-1",
+    "--SILVER_BUCKET": "todo-silver-YOUR-ACCOUNT-us-east-1",
+    "--DATABASE_NAME": "todo_analytics"
+  }' \
+  --region us-east-1
+
+# Start Gold analytics job
+aws glue start-job-run \
+  --job-name todo-gold-analytics \
+  --arguments '{
+    "--SILVER_BUCKET": "todo-silver-YOUR-ACCOUNT-us-east-1",
+    "--GOLD_BUCKET": "todo-gold-YOUR-ACCOUNT-us-east-1",
+    "--DATABASE_NAME": "todo_analytics"
+  }' \
+  --region us-east-1
+```
+
+##### Query Analytics Data
+
+```bash
+# Query user analytics
+aws athena start-query-execution \
+  --query-string "SELECT * FROM todo_analytics.user_analytics LIMIT 10" \
+  --work-group todo-analytics-workgroup \
+  --result-configuration 'OutputLocation=s3://todo-gold-YOUR-ACCOUNT-us-east-1/athena-results/' \
+  --region us-east-1
+
+# Query task analytics
+aws athena start-query-execution \
+  --query-string "SELECT * FROM todo_analytics.task_analytics LIMIT 10" \
+  --work-group todo-analytics-workgroup \
+  --result-configuration 'OutputLocation=s3://todo-gold-YOUR-ACCOUNT-us-east-1/athena-results/' \
+  --region us-east-1
+```
+
+#### 4. Monitor ETL Health
+
+##### Check CloudWatch Dashboard
+
+```bash
+# Open CloudWatch dashboard in AWS Console
+# Navigate to CloudWatch → Dashboards → todo-api-dashboard
+# Review ETL metrics and health
+```
+
+##### Check Alarms
+
+```bash
+# List CloudWatch alarms
+aws cloudwatch describe-alarms --region us-east-1 | jq '.MetricAlarms[] | select(.AlarmName | contains("todo"))'
+```
+
+##### Check Custom Metrics
+
+```bash
+# List custom metrics
+aws cloudwatch list-metrics --namespace "TodoApi/CustomMetrics" --region us-east-1
+```
+
+### ETL Troubleshooting
+
+#### Common ETL Issues
+
+1. **No Data in Bronze Layer**
+   - Check DynamoDB streams are enabled
+   - Verify Lambda function logs
+   - Check Firehose delivery stream status
+
+2. **Glue Job Failures**
+   - Check Glue job logs in CloudWatch
+   - Verify S3 permissions
+   - Check data format compatibility
+
+3. **Athena Query Failures**
+   - Verify Glue table schemas
+   - Check S3 data format
+   - Verify Athena workgroup permissions
+
+#### ETL Debugging Commands
+
+```bash
+# Check DynamoDB streams
+aws dynamodb describe-table --table-name todo-app-data --region us-east-1 | jq '.Table.StreamSpecification'
+
+# Check Firehose delivery stream
+aws firehose describe-delivery-stream --delivery-stream-name todo-cdc-stream --region us-east-1
+
+# Check Glue jobs
+aws glue get-jobs --region us-east-1 | jq '.JobList[] | select(.Name | contains("todo"))'
+
+# Check Athena workgroup
+aws athena get-work-group --work-group todo-analytics-workgroup --region us-east-1
+```
+
+### ETL Cleanup
+
+```bash
+# Destroy ETL stack
+cdk destroy TodoEtlStack
+
+# Destroy monitoring stack
+cdk destroy TodoMonitoringStack
+
+# Clean up S3 buckets manually (if needed)
+aws s3 rm s3://todo-bronze-YOUR-ACCOUNT-us-east-1 --recursive
+aws s3 rm s3://todo-silver-YOUR-ACCOUNT-us-east-1 --recursive
+aws s3 rm s3://todo-gold-YOUR-ACCOUNT-us-east-1 --recursive
+```
+
 ## Support
 
 For issues not covered in this runbook:
@@ -518,3 +845,4 @@ For issues not covered in this runbook:
 2. Verify CDK deployment completed successfully
 3. Check AWS service status for regional outages
 4. Review the ADRs in `docs/adrs/` for architectural context
+5. Check ETL runbook in `docs/runbooks/ETL/ETL_RUNBOOK.md` for ETL-specific issues
