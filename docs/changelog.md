@@ -12,6 +12,10 @@
    - ADR-005: ETL Method (Hybrid Lambda/Glue pipeline for data lake).
    - ADR-006: Monitoring and Observability (CloudWatch for API/ETL metrics and dashboard).
    - ADR-007: IaC Tool Selection (AWS CDK for Python-native infrastructure automation).
+   - Custom metrics Lambda function with real-time DynamoDB data calculation.
+   - Comprehensive CloudWatch dashboard with API health, Lambda performance, and business metrics widgets.
+   - ETL test scripts for generating sample data and testing the complete pipeline.
+   - Infrastructure as Code with proper resource cleanup (auto_delete_objects for S3 buckets).
 
    ### Changed
    - Updated System_architecture.md Mermaid diagram to include CloudWatch Metrics integration for ETL observability (added arrows from Glue Catalog and Athena to CloudWatch for better alignment with ADR-006).
@@ -19,9 +23,19 @@
    - Simplified architecture by removing SQS queue and consolidating to single Lambda handler across all ADRs (000, 004, 005, 006, 007).
    - Refined ADR prompts in `.cursor/prompts/` for better AI-assisted documentation.
    - Enhanced ADR-004 with comprehensive Repository pattern implementation details, including 5-layer architecture (Entrypoint → Controller → Service → Repository → Database) and Lambda Layers for code sharing across Lambda functions.
+   - Updated README.md project structure to reflect actual file organization and added specific file names.
+   - Updated all repository references to use correct GitHub URL: https://github.com/CoreosG/todo-api-with-insights.
+   - Enhanced custom metrics Lambda to calculate real data from DynamoDB instead of using assumptions.
+   - Improved CloudWatch dashboard widgets with correct resource dimensions and metric names.
 
    ### Fixed
-   - None yet.
+   - Fixed CloudWatch dashboard API Health Overview widget by correcting API Gateway dimensions from `ApiName` to `ApiId`.
+   - Fixed CloudWatch dashboard Lambda Performance widget by ensuring correct function name dimensions.
+   - Fixed custom metrics Lambda namespace configuration to prevent SchemaValidationError.
+   - Fixed Glue job argument passing by adding required `--BRONZE_BUCKET`, `--SILVER_BUCKET`, and `--DATABASE_NAME` parameters.
+   - Fixed CDC Lambda metrics namespace configuration for proper CloudWatch integration.
+   - Fixed S3 bucket deletion by adding `auto_delete_objects=True` to ensure complete cleanup on stack destruction.
+   - Fixed custom metrics Lambda dependencies by creating proper `requirements.txt` with `boto3`, `aws-lambda-powertools`, and `aws-xray-sdk`.
 
    ### Deprecated
    - None yet.

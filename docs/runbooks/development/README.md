@@ -12,7 +12,7 @@ This directory contains comprehensive runbooks for setting up, developing, and t
 ### 1. Initial Setup
 ```bash
 # Clone repository
-git clone <repository-url>
+git clone https://github.com/CoreosG/todo-api-with-insights
 cd todo-api-with-insights
 
 # Set up API environment

@@ -97,27 +97,62 @@ todo-api-with-insights/
 ├── api/                          # FastAPI application
 │   ├── src/                      # Source code
 │   │   ├── controllers/          # API controllers
+│   │   │   ├── task_controller.py
+│   │   │   └── user_controller.py
 │   │   ├── services/             # Business logic
+│   │   │   ├── task_service.py
+│   │   │   ├── user_service.py
+│   │   │   ├── auth_service.py
+│   │   │   └── idempotency_service.py
 │   │   ├── repositories/         # Data access layer
+│   │   │   ├── task_repository.py
+│   │   │   ├── user_repository.py
+│   │   │   └── idempotency_repository.py
 │   │   ├── models/               # Pydantic models
-│   │   └── utils/                # Utility functions
+│   │   │   ├── task_models.py
+│   │   │   ├── user_models.py
+│   │   │   └── idempotency_models.py
+│   │   ├── utils/                # Utility functions
+│   │   │   ├── auth_utils.py
+│   │   │   └── response_utils.py
+│   │   ├── middleware/           # Custom middleware
+│   │   ├── dependencies.py       # FastAPI dependencies
+│   │   └── main.py               # FastAPI application entry point
 │   ├── tests/                    # Test suite
-│   │   ├── unit/                 # Unit tests
-│   │   ├── integration/          # Integration tests
+│   │   ├── unit/                 # Unit tests (13 files)
+│   │   ├── integration/          # Integration tests (3 files)
 │   │   ├── fixtures/             # Test data
-│   │   └── helpers/              # Test utilities
+│   │   ├── helpers/              # Test utilities
+│   │   └── scripts/              # Test automation scripts
+│   ├── lambda_entry.py           # Lambda entry point
 │   ├── requirements.txt          # Dependencies
 │   ├── requirements-dev.txt      # Dev dependencies
-│   └── pyproject.toml            # Linting config
+│   ├── pyproject.toml            # Linting config
+│   ├── mypy.ini                  # Type checking config
+│   └── Makefile                  # Build automation
 ├── etl/                          # ETL pipeline
 │   ├── glue_jobs/                # Glue Spark jobs
 │   │   ├── silver_transformation/ # Bronze → Silver
+│   │   │   ├── silver_transformation.py
+│   │   │   └── requirements.txt
 │   │   └── gold_analytics/       # Silver → Gold
+│   │       ├── gold_analytics.py
+│   │       └── requirements.txt
 │   ├── lambda_cdc/               # CDC processing
+│   │   ├── src/
+│   │   │   └── cdc_handler.py
+│   │   ├── tests/
+│   │   └── requirements.txt
 │   ├── lambda_custom_metrics/     # Business metrics
+│   │   └── src/
+│   │       └── custom_metrics.py
 │   ├── shared/                    # Shared utilities
+│   │   ├── schemas/
+│   │   └── utils/
 │   ├── tests/                     # ETL tests
-│   └── requirements.txt           # ETL dependencies
+│   ├── requirements.txt           # ETL dependencies
+│   ├── requirements-dev.txt       # ETL dev dependencies
+│   └── pyproject.toml             # ETL config
 ├── infra/                        # Infrastructure as Code
 │   ├── stacks/                   # CDK stacks
 │   │   ├── data_stack.py         # DynamoDB
@@ -130,7 +165,9 @@ todo-api-with-insights/
 │   │   ├── test-etl.ps1          # PowerShell ETL testing
 │   │   ├── test-etl.sh           # Bash ETL testing
 │   │   └── README.md             # Scripts documentation
+│   ├── bin/                      # CDK bootstrap
 │   ├── app.py                    # CDK application
+│   ├── cdk.json                  # CDK configuration
 │   └── requirements.txt           # CDK dependencies
 ├── docs/                         # Documentation
 │   ├── adrs/                     # Architecture Decision Records
@@ -141,11 +178,13 @@ todo-api-with-insights/
 │   │   ├── 004-api-framework-and-architecture.md
 │   │   ├── 005-etl-method.md
 │   │   ├── 006-monitoring-observability.md
-│   │   └── 007-iac-tool-selection.md
+│   │   ├── 007-iac-tool-selection.md
+│   │   └── template.md
 │   ├── runbooks/                 # Operational guides
-│   │   ├── CONSOLIDATED_RUNBOOK.md
+│   │   ├── RUNBOOK.md
 │   │   ├── API_LAYER_TESTING.md
 │   │   ├── DEPLOYMENT_AND_TESTING.md
+│   │   ├── development/          # Development guides
 │   │   └── ETL/                  # ETL operations
 │   │       ├── ETL_RUNBOOK.md
 │   │       └── athena_queries.sql
@@ -173,7 +212,7 @@ todo-api-with-insights/
 ### 1. Clone Repository
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/CoreosG/todo-api-with-insights
 cd todo-api-with-insights
 ```
 
@@ -504,6 +543,8 @@ pip install -r requirements.txt -r requirements-dev.txt
 docker run -d -p 8000:8000 amazon/dynamodb-local
 
 # Run API locally
+make serve-local
+# Or you can run uvicorn, but you have to setup env vars yourself then
 uvicorn src.main:app --reload --host 0.0.0.0 --port 8000
 
 # Visit API documentation

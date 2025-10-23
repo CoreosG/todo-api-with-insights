@@ -68,7 +68,7 @@ The Todo API follows a serverless-first architecture with the following componen
 ### 1. Clone and Setup
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/CoreosG/todo-api-with-insights
 cd todo-api-with-insights
 ```
 
