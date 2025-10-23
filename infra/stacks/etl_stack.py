@@ -67,6 +67,7 @@ class EtlStack(Stack):
             encryption=BucketEncryption.S3_MANAGED,
             block_public_access=BlockPublicAccess.BLOCK_ALL,
             removal_policy=RemovalPolicy.DESTROY,  # For development only
+            auto_delete_objects=True,  # Empty bucket before deletion
             lifecycle_rules=[
                 LifecycleRule(
                     id="BronzeLifecycle",
@@ -92,6 +93,7 @@ class EtlStack(Stack):
             encryption=BucketEncryption.S3_MANAGED,
             block_public_access=BlockPublicAccess.BLOCK_ALL,
             removal_policy=RemovalPolicy.DESTROY,  # For development only
+            auto_delete_objects=True,  # Empty bucket before deletion
             lifecycle_rules=[
                 LifecycleRule(
                     id="SilverLifecycle",
@@ -113,6 +115,7 @@ class EtlStack(Stack):
             encryption=BucketEncryption.S3_MANAGED,
             block_public_access=BlockPublicAccess.BLOCK_ALL,
             removal_policy=RemovalPolicy.DESTROY,  # For development only
+            auto_delete_objects=True,  # Empty bucket before deletion
         )
 
     def _create_iam_roles(self) -> None:
@@ -124,7 +127,7 @@ class EtlStack(Stack):
             assumed_by=ServicePrincipal("firehose.amazonaws.com"),
             managed_policies=[
                 ManagedPolicy.from_aws_managed_policy_name("service-role/AWSLambdaBasicExecutionRole")
-            ]
+            ],
         )
         
         # Grant Firehose access to S3 buckets
@@ -137,7 +140,7 @@ class EtlStack(Stack):
             assumed_by=ServicePrincipal("glue.amazonaws.com"),
             managed_policies=[
                 ManagedPolicy.from_aws_managed_policy_name("service-role/AWSGlueServiceRole")
-            ]
+            ],
         )
         
         # Grant Glue access to S3 buckets
@@ -191,7 +194,7 @@ class EtlStack(Stack):
                         )
                     ]
                 )
-            }
+            },
         )
         
         # Grant Athena access to S3 buckets
@@ -296,7 +299,15 @@ class EtlStack(Stack):
             ),
             max_capacity=2,
             timeout=60,
-            glue_version="4.0"
+            glue_version="4.0",
+            default_arguments={
+                "--BRONZE_BUCKET": self.bronze_bucket.bucket_name,
+                "--SILVER_BUCKET": self.silver_bucket.bucket_name,
+                "--DATABASE_NAME": self.glue_database.ref,
+                "--TempDir": f"s3://{self.bronze_bucket.bucket_name}/temp/",
+                "--job-language": "python",
+                "--job-bookmark-option": "job-bookmark-enable"
+            }
         )
 
         # Gold analytics job
@@ -311,7 +322,15 @@ class EtlStack(Stack):
             ),
             max_capacity=2,
             timeout=60,
-            glue_version="4.0"
+            glue_version="4.0",
+            default_arguments={
+                "--SILVER_BUCKET": self.silver_bucket.bucket_name,
+                "--GOLD_BUCKET": self.gold_bucket.bucket_name,
+                "--DATABASE_NAME": self.glue_database.ref,
+                "--TempDir": f"s3://{self.bronze_bucket.bucket_name}/temp/",
+                "--job-language": "python",
+                "--job-bookmark-option": "job-bookmark-enable"
+            }
         )
 
     def _create_athena_workgroup(self) -> None:
@@ -342,7 +361,7 @@ class EtlStack(Stack):
             assumed_by=ServicePrincipal("lambda.amazonaws.com"),
             managed_policies=[
                 ManagedPolicy.from_aws_managed_policy_name("service-role/AWSLambdaBasicExecutionRole")
-            ]
+            ],
         )
         
         # Grant CDC Lambda access to DynamoDB streams

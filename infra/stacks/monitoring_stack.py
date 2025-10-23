@@ -1,6 +1,6 @@
 import os
 from aws_cdk import (
-    Stack, Duration, CfnOutput, Tags
+    Stack, Duration, CfnOutput, Tags, RemovalPolicy
 )
 from aws_cdk.aws_cloudwatch import (
     Dashboard, GraphWidget, Metric, Alarm, 
@@ -39,7 +39,7 @@ class MonitoringStack(Stack):
         self.alert_topic = Topic(
             self, "AlertTopic",
             display_name="Todo API Alerts",
-            topic_name="todo-api-alerts"
+            topic_name="todo-api-alerts",
         )
         
         # Add email subscription if provided
@@ -57,7 +57,7 @@ class MonitoringStack(Stack):
 
         self.dashboard = Dashboard(
             self, "MonitoringDashboard",
-            dashboard_name="TodoApiMonitoring"
+            dashboard_name="TodoApiMonitoring",
         )
 
         # ===========================================
@@ -71,19 +71,19 @@ class MonitoringStack(Stack):
                 Metric(
                     namespace="AWS/ApiGateway",
                     metric_name="Count",
-                    dimensions_map={"ApiName": "TodoApi"},
+                    dimensions_map={"ApiName": "todo-api-gateway"},
                     statistic="Sum"
                 ),
                 Metric(
                     namespace="AWS/ApiGateway",
                     metric_name="4XXError",
-                    dimensions_map={"ApiName": "TodoApi"},
+                    dimensions_map={"ApiName": "todo-api-gateway"},
                     statistic="Sum"
                 ),
                 Metric(
                     namespace="AWS/ApiGateway",
                     metric_name="5XXError",
-                    dimensions_map={"ApiName": "TodoApi"},
+                    dimensions_map={"ApiName": "todo-api-gateway"},
                     statistic="Sum"
                 )
             ],
@@ -91,7 +91,7 @@ class MonitoringStack(Stack):
                 Metric(
                     namespace="AWS/ApiGateway",
                     metric_name="Latency",
-                    dimensions_map={"ApiName": "TodoApi"},
+                    dimensions_map={"ApiName": "todo-api-gateway"},
                     statistic="Average"
                 )
             ],
@@ -106,19 +106,19 @@ class MonitoringStack(Stack):
                 Metric(
                     namespace="AWS/Lambda",
                     metric_name="Duration",
-                    dimensions_map={"FunctionName": "todo-api-handler"},
+                    dimensions_map={"FunctionName": "todo-api-function"},
                     statistic="Average"
                 ),
                 Metric(
                     namespace="AWS/Lambda",
                     metric_name="Errors",
-                    dimensions_map={"FunctionName": "todo-api-handler"},
+                    dimensions_map={"FunctionName": "todo-api-function"},
                     statistic="Sum"
                 ),
                 Metric(
                     namespace="AWS/Lambda",
                     metric_name="Throttles",
-                    dimensions_map={"FunctionName": "todo-api-handler"},
+                    dimensions_map={"FunctionName": "todo-api-function"},
                     statistic="Sum"
                 )
             ],
@@ -126,7 +126,7 @@ class MonitoringStack(Stack):
                 Metric(
                     namespace="AWS/Lambda",
                     metric_name="Invocations",
-                    dimensions_map={"FunctionName": "todo-api-handler"},
+                    dimensions_map={"FunctionName": "todo-api-function"},
                     statistic="Sum"
                 )
             ],
@@ -320,6 +320,12 @@ class MonitoringStack(Stack):
                     metric_name="EstimatedCharges",
                     dimensions_map={"Currency": "USD", "ServiceName": "AmazonS3"},
                     statistic="Maximum"
+                ),
+                Metric(
+                    namespace="AWS/Billing",
+                    metric_name="EstimatedCharges",
+                    dimensions_map={"Currency": "USD", "ServiceName": "AmazonApiGateway"},
+                    statistic="Maximum"
                 )
             ],
             width=12,
@@ -351,7 +357,7 @@ class MonitoringStack(Stack):
             metric=Metric(
                 namespace="AWS/ApiGateway",
                 metric_name="4XXError",
-                dimensions_map={"ApiName": "TodoApi"}
+                dimensions_map={"ApiName": "todo-api-gateway"}
             ),
             threshold=10,
             evaluation_periods=2,
@@ -366,7 +372,7 @@ class MonitoringStack(Stack):
             metric=Metric(
                 namespace="AWS/Lambda",
                 metric_name="Errors",
-                dimensions_map={"FunctionName": "todo-api-handler"}
+                dimensions_map={"FunctionName": "todo-api-function"}
             ),
             threshold=5,
             evaluation_periods=1,
@@ -381,7 +387,7 @@ class MonitoringStack(Stack):
             metric=Metric(
                 namespace="AWS/Lambda",
                 metric_name="Duration",
-                dimensions_map={"FunctionName": "todo-api-handler"}
+                dimensions_map={"FunctionName": "todo-api-function"}
             ),
             threshold=5000,  # 5 seconds
             evaluation_periods=2,
@@ -481,7 +487,7 @@ class MonitoringStack(Stack):
             assumed_by=ServicePrincipal("lambda.amazonaws.com"),
             managed_policies=[
                 ManagedPolicy.from_aws_managed_policy_name("service-role/AWSLambdaBasicExecutionRole")
-            ]
+            ],
         )
         
         # Grant CloudWatch metrics permissions
