@@ -13,6 +13,8 @@ env = Environment(
 # Import stacks - must be imported after app creation
 from stacks.api_stack import ApiStack
 from stacks.data_stack import DataStack
+from stacks.etl_stack import EtlStack
+from stacks.monitoring_stack import MonitoringStack
 
 
 # DataStack must be created first (DynamoDB table)
@@ -31,8 +33,26 @@ api_stack = ApiStack(
     description="Cognito, Lambda, API Gateway for Todo API",
 )
 
+# ETL Stack depends on DataStack (references the DynamoDB table)
+etl_stack = EtlStack(
+    app,
+    "TodoEtlStack",
+    data_stack.table, # Pass table reference for CDC processing
+    env=env,
+    description="ETL pipeline for data lake and analytics",
+)
+
+# Monitoring Stack (can be created independently)
+monitoring_stack = MonitoringStack(
+    app,
+    "TodoMonitoringStack",
+    env=env,
+    description="CloudWatch monitoring and alerting",
+)
+
 # Add stack dependencies
 api_stack.add_dependency(data_stack)
+etl_stack.add_dependency(data_stack)
 
 # Synthesize the CloudFormation templates
 app.synth()
