@@ -55,3 +55,6 @@ Dashboards: 500 widgets/dashboard; 100 dashboards/account
 Firehose: 5000 records/sec delivery; buffer 1-128MB, 60-900s interval
 Lambda: 1000 concurrent executions; 15min timeout
 ```
+
+
+commit link: dead4e91a8909e5b15673dc705e1fc593d1e0cf4

@@ -70,4 +70,5 @@ Lambda CDC: 15min timeout; 10GB memory max; 1000 concurrent executions/account; 
 
 
 
-commit link:
+commit link: 1ce9cf7edf8342a2856c008c4a21e07b433c26e4
+(esse ja foi melhorzinho pois peguei algumas dicas de limitações dos serviços, eu só procurei por elas pois descobri que tem bastante coisa assim enquanto estudava pro SAA-C03)

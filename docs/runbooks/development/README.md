@@ -5,6 +5,7 @@ This directory contains comprehensive runbooks for setting up, developing, and t
 ## Main Documentation
 
 1. **[API Setup and Testing Guide](./API_SETUP_AND_TESTING.md)** - **START HERE** - Complete guide covering setup, testing, development, and deployment
+2. **[API Layer Testing Runbook](./API_LAYER_TESTING.md)** - **API LAYER ONLY** - Focused guide for testing ApiStack and DataStack with curl/PowerShell commands
 
 ## Quick Start
 

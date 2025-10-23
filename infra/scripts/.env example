@@ -1,0 +1,8 @@
+API_ENDPOINT=https://your-api.execute-api.us-east-1.amazonaws.com/
+REGION=us-east-1
+AWS_PROFILE=default # or your AWS profile name
+USER_POOL_ID=us-east-1_ID # or your user pool id
+CLIENT_ID=abcdgfe345323 # your client id
+PASSWORD=TempPassword1! # your password
+COGNITO_USERNAME= # your cognito username (optional)
+COGNITO_EMAIL= # your cognito email (optional)

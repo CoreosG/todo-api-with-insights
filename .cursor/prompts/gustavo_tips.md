@@ -47,3 +47,5 @@ Handler (Entrypoint) -> Controller -> Service -> Repository (lambda layer) -> Dy
 
 Objective:
 Get a elaborate prompt to update [004-api-framework](/docs/adrs/004-api-framework-and-architecture.md) with the new architecture decisions.
+
+commit link: 43fa0a55cf64a4efd887d8048f2026d0343b6300
