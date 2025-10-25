@@ -219,15 +219,22 @@ cd todo-api-with-insights
 ### 2. Deploy Infrastructure
 
 ```bash
-# Bootstrap CDK (first time only)
-cdk bootstrap aws://YOUR-ACCOUNT-ID/us-east-1
-
 # Navigate to infrastructure directory
 cd infra
 
-# Activate CDK virtual environment
-.\venv-infra\Scripts\Activate.ps1  # Windows
-# source venv-infra/bin/activate    # Linux/Mac
+# Create and activate virtual environment
+python -m venv venv-infra
+.\venv-infra\Scripts\Activate.ps1  # Windows PowerShell
+# OR
+.\venv-infra\Scripts\activate.bat  # Windows CMD
+# OR
+source venv-infra/bin/activate     # Linux/Mac
+
+# Install CDK dependencies
+pip install -r requirements.txt
+
+# Bootstrap CDK (first time only)
+cdk bootstrap aws://YOUR-ACCOUNT-ID/us-east-1
 
 # Deploy all stacks
 cdk deploy TodoDataStack --require-approval never
@@ -414,9 +421,13 @@ https://console.aws.amazon.com/cloudwatch/home?region=us-east-1#dashboards:name=
 ```bash
 cd api
 
-# Activate virtual environment
-.\venv-api\Scripts\Activate.ps1  # Windows
-# source venv-api/bin/activate    # Linux/Mac
+# Create and activate virtual environment
+python -m venv venv-api
+.\venv-api\Scripts\Activate.ps1  # Windows PowerShell
+# OR
+.\venv-api\Scripts\activate.bat  # Windows CMD
+# OR
+source venv-api/bin/activate     # Linux/Mac
 
 # Install dependencies
 pip install -r requirements.txt -r requirements-dev.txt
@@ -435,9 +446,13 @@ python -m pytest --cov=src tests/ -v
 ```bash
 cd etl
 
-# Activate virtual environment
-.\venv-etl\Scripts\Activate.ps1  # Windows
-# source venv-etl/bin/activate    # Linux/Mac
+# Create and activate virtual environment
+python -m venv venv-etl
+.\venv-etl\Scripts\Activate.ps1  # Windows PowerShell
+# OR
+.\venv-etl\Scripts\activate.bat  # Windows CMD
+# OR
+source venv-etl/bin/activate     # Linux/Mac
 
 # Install dependencies
 pip install -r requirements.txt -r requirements-dev.txt
@@ -450,9 +465,13 @@ python -m pytest tests/ -v
 ```bash
 cd infra
 
-# Activate virtual environment
-.\venv-infra\Scripts\Activate.ps1  # Windows
-# source venv-infra/bin/activate    # Linux/Mac
+# Create and activate virtual environment (if not already created)
+python -m venv venv-infra
+.\venv-infra\Scripts\Activate.ps1  # Windows PowerShell
+# OR
+.\venv-infra\Scripts\activate.bat  # Windows CMD
+# OR
+source venv-infra/bin/activate     # Linux/Mac
 
 # Install dependencies
 pip install -r requirements.txt
@@ -470,6 +489,10 @@ cdk deploy --all --require-approval never
 ```bash
 cd api
 
+# Activate virtual environment
+.\venv-api\Scripts\Activate.ps1  # Windows
+# source venv-api/bin/activate    # Linux/Mac
+
 # Format code
 black src/ tests/
 
@@ -483,6 +506,10 @@ mypy src/
 #### ETL Linting
 ```bash
 cd etl
+
+# Activate virtual environment
+.\venv-etl\Scripts\Activate.ps1  # Windows
+# source venv-etl/bin/activate    # Linux/Mac
 
 # Format code
 black .
@@ -531,10 +558,13 @@ The project includes comprehensive ADRs documenting all major architectural deci
 ```bash
 cd api
 
-# Create virtual environment
+# Create and activate virtual environment
 python -m venv venv-api
-.\venv-api\Scripts\Activate.ps1  # Windows
-# source venv-api/bin/activate    # Linux/Mac
+.\venv-api\Scripts\Activate.ps1  # Windows PowerShell
+# OR
+.\venv-api\Scripts\activate.bat  # Windows CMD
+# OR
+source venv-api/bin/activate     # Linux/Mac
 
 # Install dependencies
 pip install -r requirements.txt -r requirements-dev.txt
@@ -555,10 +585,13 @@ open http://localhost:8000/docs
 ```bash
 cd etl
 
-# Create virtual environment
+# Create and activate virtual environment
 python -m venv venv-etl
-.\venv-etl\Scripts\Activate.ps1  # Windows
-# source venv-etl/bin/activate    # Linux/Mac
+.\venv-etl\Scripts\Activate.ps1  # Windows PowerShell
+# OR
+.\venv-etl\Scripts\activate.bat  # Windows CMD
+# OR
+source venv-etl/bin/activate     # Linux/Mac
 
 # Install dependencies
 pip install -r requirements.txt -r requirements-dev.txt
@@ -571,10 +604,13 @@ python -m pytest tests/ -v
 ```bash
 cd infra
 
-# Create virtual environment
+# Create and activate virtual environment
 python -m venv venv-infra
-.\venv-infra\Scripts\Activate.ps1  # Windows
-# source venv-infra/bin/activate    # Linux/Mac
+.\venv-infra\Scripts\Activate.ps1  # Windows PowerShell
+# OR
+.\venv-infra\Scripts\activate.bat  # Windows CMD
+# OR
+source venv-infra/bin/activate     # Linux/Mac
 
 # Install dependencies
 pip install -r requirements.txt
@@ -632,6 +668,15 @@ export ENVIRONMENT="production"
 ```bash
 cd infra
 
+# Create and activate virtual environment (if not already created)
+python -m venv venv-infra
+.\venv-infra\Scripts\Activate.ps1  # Windows PowerShell
+# OR
+source venv-infra/bin/activate     # Linux/Mac
+
+# Install dependencies
+pip install -r requirements.txt
+
 # Bootstrap CDK (first time only)
 cdk bootstrap aws://YOUR-ACCOUNT-ID/us-east-1
 
@@ -683,6 +728,8 @@ jobs:
       - name: Deploy Infrastructure
         run: |
           cd infra
+          python -m venv venv-infra
+          source venv-infra/bin/activate
           pip install -r requirements.txt
           cdk deploy --all --require-approval never
         env:
