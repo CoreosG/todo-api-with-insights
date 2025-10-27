@@ -63,8 +63,8 @@ graph TD
     %% Data Lake
     S3B --> GC[Glue Catalog/Crawler]
     GC --> GS[S3 Silver<br/>Glue Job]
-    GS --> A[Athena]
-    A --> GG[S3 Gold]
+    GS --> GG[S3 Gold<br/>Glue Job]
+    GG --> A[Athena]
     
     %% Observability Layer
     L1 -->|Duration Errors| CWM
@@ -73,6 +73,7 @@ graph TD
     DDB -->|ConsumedRCU| CWM
     GC -->|CrawlerDuration| CWM
     GS -->|JobDuration| CWM
+    GG -->|JobDuration| CWM
     A -->|BytesScanned| CWM
     
     %% Dashboard & Alarms
